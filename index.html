@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenST Archive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <script>
+        tailwind.config = { theme: { extend: { colors: { brand: '#40B5AD', dark: '#1f2223', panel: '#2a2c2d' } } } }
+    </script>
+</head>
+<body class="bg-dark text-white overflow-hidden font-sans">
+<div id="app" v-cloak class="flex flex-col h-screen">
+    <nav-bar v-model:proxy="useProxy"></nav-bar>
+
+    <div class="flex flex-1 overflow-hidden relative">
+        <side-bar
+                :categories="categories"
+                :groups="dynamicTagGroups"
+                :selected="selectedTags"
+                v-model:search="searchQuery"
+                @reset="resetFilters">
+        </side-bar>
+
+        <main class="flex-1 p-6 overflow-y-auto bg-dark">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 content-start">
+                <archive-card
+                        v-for="item in filteredList"
+                        :key="item.id"
+                        :item="item"
+                        @open="detailItem = $event">
+                </archive-card>
+            </div>
+
+            <div v-if="filteredList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-500">
+                <p class="text-lg">没找到相关的存档呢 w</p>
+            </div>
+        </main>
+    </div>
+
+    <detail-modal
+            v-if="detailItem"
+            :item="detailItem"
+            @close="detailItem = null">
+    </detail-modal>
+</div>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script type="module" src="scripts/main.js"></script>
+</body>
+</html>
