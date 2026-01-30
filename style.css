@@ -1,0 +1,36 @@
+/* css/style.css */
+/* 强制提升细小文字的可读性 */
+.text-\[10px\] { font-size: 0.85rem !important; } /* 原本约10px -> 提升到约13.6px */
+.text-xs { font-size: 0.9rem !important; }        /* 原本12px -> 提升到14.4px */
+.text-sm { font-size: 1.1rem !important; }        /* 原本14px -> 提升到17.6px */
+
+/* 优化字体粗细，大字号配合中等字重更好看 */
+body {
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: 0.01em;
+}
+/* 防止 Vue 加载前的花括号闪烁 */
+[v-cloak] {
+    display: none !important;
+}
+
+/* 自定义滚动条 - Webkit (Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px; /* 横向滚动条高度 */
+}
+
+::-webkit-scrollbar-track {
+    background: #1c1c1c;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #40B5AD; /* 你的 Brand 颜色 */
+}
+
+/* 这里的 Tailwind 自定义配置其实是 JS 注入的，所以 CSS 文件里只放纯 CSS */
