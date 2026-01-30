@@ -10,7 +10,9 @@
         tailwind.config = { theme: { extend: { colors: { brand: '#40B5AD', dark: '#1f2223', panel: '#2a2c2d' } } } }
     </script>
 </head>
+
 <body class="bg-dark text-white overflow-hidden font-sans">
+
 <div id="app" v-cloak class="flex flex-col h-screen">
     <nav-bar v-model:proxy="useProxy"></nav-bar>
 
@@ -25,16 +27,29 @@
 
         <main class="flex-1 p-6 overflow-y-auto bg-dark">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 content-start">
+
+                <a href="upload/upload.html"
+                   class="flex flex-col h-full min-h-[320px] items-center justify-center p-6 rounded-[2rem] bg-panel/30 border-2 border-dashed border-white/10 hover:border-brand/50 hover:bg-brand/5 transition-all group">
+                    <div class="w-16 h-16 rounded-2xl bg-brand/10 flex items-center justify-center text-3xl mb-4 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
+                        🚀
+                    </div>
+                    <div class="text-center">
+                        <h3 class="text-lg font-bold text-white tracking-tight">贡献你的机器</h3>
+                        <p class="text-xs text-gray-500 mt-2 leading-relaxed">
+                            欢迎分享你的红石科技<br>点击前往自动化投递系统
+                        </p>
+                    </div>
+                    <div class="mt-6 px-5 py-2 rounded-full bg-brand/10 border border-brand/20 text-brand text-[10px] font-bold uppercase tracking-widest group-hover:bg-brand group-hover:text-white transition-all">
+                        立即投递
+                    </div>
+                </a>
+
                 <archive-card
                         v-for="item in filteredList"
                         :key="item.id"
                         :item="item"
                         @open="detailItem = $event">
                 </archive-card>
-            </div>
-
-            <div v-if="filteredList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-500">
-                <p class="text-lg">没找到相关的存档呢 w</p>
             </div>
         </main>
     </div>
