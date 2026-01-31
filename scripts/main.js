@@ -4,10 +4,6 @@ import { TAG_CONFIG, CATEGORIES } from './config.js';
 
 const { createApp } = Vue;
 
-/**
- * ✨ 核心优化：懒加载 + 离场内存卸载指令
- * 适配 2.0 时代原生逻辑，确保视口外图片彻底释放
- */
 const lazyDirective = {
     mounted(el, binding) {
         el.dataset.src = binding.value;
@@ -83,9 +79,11 @@ const AppOptions = {
             return Logic.getFilteredList(
                 this.allData,
                 this.normalizedSearch,
-                this.selectedTags
+                this.selectedTags,
+                this.normalize // ✨ 传入转换函数
             );
         },
+
         // 3. ✨ 核心：总页数计算
         totalPages() {
             return Math.ceil(this.fullFilteredList.length / this.pageSize) || 1;
@@ -139,33 +137,58 @@ const AppOptions = {
     },
     async mounted() {
         try {
-            const [dataRes, sRes, tRes] = await Promise.all([
+            const [dataRes, dictRes] = await Promise.all([
                 fetch('../data/database.json'),
-                fetch('./Traditional-Simplefild/STCharacters.txt'),
-                fetch('./Traditional-Simplefild/TSCharacters.txt')
+                fetch('./Traditional-Simplefild/STCharacters.txt') // 只需要这一个
             ]);
 
-            // ✨ 锁定数据，切断响应式开销
-            this.allData = Object.freeze(await dataRes.json());
+            const dictText = await dictRes.text();
+            const lines = dictText.split(/\r?\n/);
 
-            const textS = await sRes.text();
-            const textT = await tRes.text();
-            const linesS = textS.split(/\r?\n/);
-            const linesT = textT.split(/\r?\n/);
-            const fs = []; const ft = [];
-            linesS.forEach((sLine, i) => {
-                const sChar = sLine.trim();
-                const tLine = linesT[i] ? linesT[i].trim() : "";
-                if (!sChar || !tLine) return;
-                Array.from(tLine.replace(/\s+/g, '')).forEach(tChar => {
-                    fs.push(sChar); ft.push(tChar);
+            const fs = []; // 简体库
+            const ft = []; // 繁体库
+
+            lines.forEach(line => {
+                // 1. 跳过注释行和空行
+                if (!line || line.startsWith('#')) return;
+
+                // 2. OpenCC 格式通常是: 简体 [Tab] 繁体1 繁体2
+                // 我们用正则匹配：第一个字是简体，后面剩下的全是繁体
+                const parts = line.trim().split(/\s+/);
+                if (parts.length < 2) return;
+
+                const sChar = parts[0]; // 第一个是简体
+                const tChars = parts.slice(1); // 后面全是对应的繁体
+
+                tChars.forEach(tChar => {
+                    if (tChar) {
+                        fs.push(sChar);
+                        ft.push(tChar);
+                    }
                 });
             });
 
             this.dictSArray = Object.freeze(fs);
             this.dictTArray = Object.freeze(ft);
+
+            const rawData = await dataRes.json();
+            this.allData = Object.freeze(rawData);
+
+            console.log(`[OpenCC] 字典解析成功：已映射 ${fs.length} 个繁体字到简体`);
+            window.vApp = this; // 依然暴露实例方便你调试
         } catch (e) {
-            console.error("❌ 初始化失败:", e);
+            console.error("❌ 字典加载失败:", e);
+
+            // 2. ✨ 先冻结并同步字典
+            this.dictSArray = Object.freeze(fs);
+            this.dictTArray = Object.freeze(ft);
+
+            // 3. ✨ 最后加载主数据
+            // 当 allData 被赋值时，normalizedSearch 计算属性已经可以正确利用字典了
+            const rawData = await dataRes.json();
+            this.allData = Object.freeze(rawData);
+
+            console.log(`[System] 字典就绪 (${fs.length} 字符), 数据已冻结.`);
         }
     }
 };
