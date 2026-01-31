@@ -1,5 +1,14 @@
 [
     {
+        "id": "1.13+ 6和7bit 铁轨BUD解码器",
+        "name": "1.13+ 6和7bit 铁轨BUD解码器",
+        "author": "Unknown",
+        "tags": [],
+        "description": "二进制floppy解码器",
+        "preview": "archive/1.13+ 6和7bit 铁轨BUD解码器/preview.png",
+        "filename": "1.13_6_and_7_Bit_Rail_Bud_Decoders[解码器] (1).litematic"
+    },
+    {
         "id": "TEST",
         "name": "TEST",
         "author": "Linvin",
