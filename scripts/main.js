@@ -133,7 +133,13 @@ const AppOptions = {
             if (!item) return '';
             const raw = `https://raw.githubusercontent.com/MC-OpenST/website/main/archive/${item.id}/${item.filename}`;
             return this.useProxy ? `https://ghfast.top/${raw}` : raw;
-        }
+        },
+        getSafePath(rawPath) {
+            if (!rawPath) return '';
+            return rawPath.split('/')
+                .map(segment => encodeURIComponent(segment))
+                .join('/');
+        },
     },
     async mounted() {
         try {

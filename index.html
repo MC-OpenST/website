@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenST Archive</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://lib.baomitu.com/marked/11.1.1/marked.min.js"></script>
     <link rel="stylesheet" href="style.css">
     <script>
         tailwind.config = { theme: { extend: { colors: { brand: '#40B5AD', dark: '#1f2223', panel: '#2a2c2d' } } } }
@@ -46,7 +47,7 @@
                 <archive-card
                         v-for="item in pagedList"
                         :key="item.id"
-                        :item="item"
+                        :item="{ ...item, preview: getSafePath(item.preview) }"
                         @open="detailItem = $event">
                 </archive-card>
             </div>

@@ -114,37 +114,68 @@ export const ArchiveCard = {
 
 export const DetailModal = {
     props: ['item'],
+    computed: {
+        renderedDescription() {
+            if (!this.item || !this.item.description) {
+                return '<p class="italic opacity-50 text-gray-600">作者没留下任何简介，一定是大佬吧！</p>';
+            }
+            try {
+                return marked.parse(this.item.description, {
+                    breaks: true,
+                    gfm: true
+                });
+            } catch (e) {
+                console.error("Markdown parse error:", e);
+                return this.item.description;
+            }
+        }
+    },
     template: `
     <div class="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-6 text-[16px]">
-        <div class="absolute inset-0 bg-black/90 backdrop-blur-md" @click="$emit('close')"></div>
-        <div class="bg-panel w-full max-w-6xl md:rounded-[2rem] shadow-2xl overflow-hidden relative z-10 flex flex-col md:flex-row h-full md:h-auto md:max-h-[90vh] border border-white/5">
-            <button @click="$emit('close')" class="absolute top-6 right-6 z-30 bg-black/50 hover:bg-brand text-white w-10 h-10 rounded-full flex items-center justify-center transition-all">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5"></path></svg>
+        <div class="absolute inset-0 bg-black/95 backdrop-blur-md" @click="$emit('close')"></div>
+        
+        <div class="bg-[#1a1a1a] w-full max-w-6xl md:rounded-[2rem] shadow-2xl overflow-hidden relative z-10 flex flex-col md:flex-row h-full md:h-auto md:max-h-[90vh] border border-white/5">
+            
+            <button @click="$emit('close')" class="absolute top-6 right-6 z-30 bg-black/50 hover:bg-brand text-white w-10 h-10 rounded-full flex items-center justify-center transition-all group">
+                <svg class="w-6 h-6 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5"></path></svg>
             </button>
-            <div class="flex flex-col md:flex-row w-full overflow-y-auto">
+
+            <div class="flex flex-col md:flex-row w-full overflow-y-auto md:overflow-visible">
+                
                 <div class="w-full md:w-3/5 bg-black/20 flex items-center justify-center border-b md:border-b-0 md:border-r border-white/5 p-4 md:p-10 md:sticky md:top-0 h-auto md:h-[90vh] shrink-0">
-                    <img :src="item.preview" class="w-full h-auto md:max-h-full object-contain rounded-xl">
+                    <img :src="item.preview" class="w-full h-auto md:max-h-full object-contain rounded-xl shadow-2xl">
                 </div>
-                <div class="w-full md:w-2/5 p-8 md:p-10 flex flex-col gap-8">
+
+                <div class="w-full md:w-2/5 p-8 md:p-10 flex flex-col gap-8 bg-[#1a1a1a] md:overflow-y-auto md:h-[90vh] custom-scrollbar">
                     <div>
                         <div class="text-brand text-xs font-bold tracking-[0.2em] uppercase mb-2">Archive Detail</div>
                         <h2 class="text-3xl font-bold text-white leading-tight">{{ item.name }}</h2>
                         <p class="text-lg text-gray-500 mt-3 flex items-center gap-2">by {{ item.author }}</p>
                     </div>
+
                     <div class="flex flex-wrap gap-2.5">
-                        <span v-for="t in item.tags" :key="t" class="text-[13px] bg-white/5 px-3 py-1.5 rounded-lg border border-white/10 text-gray-300 font-bold">{{ t }}</span>
+                        <span v-for="t in item.tags" :key="t" 
+                              class="text-[12px] bg-white/5 px-3 py-1.5 rounded-lg border border-white/10 text-gray-300 font-bold hover:border-brand/30 transition-colors">
+                            {{ t }}
+                        </span>
                     </div>
+
                     <div class="flex-1">
-                        <h4 class="text-sm text-gray-500 font-bold mb-3 uppercase tracking-wide">Description</h4>
-                        <div class="text-[15px] text-gray-400 leading-relaxed bg-black/10 p-6 rounded-2xl border border-white/5">
-                            {{ item.description || '作者没留下任何简介，一定是大佬吧！' }}
+                        <h4 class="text-[10px] text-[#40B5AD] font-bold mb-3 uppercase tracking-widest opacity-80">Description</h4>
+                        <div class="text-[15px] text-gray-400 leading-relaxed markdown-body">
+                            <div v-html="renderedDescription"></div>
                         </div>
                     </div>
-                    <div class="pt-4 pb-8 md:pb-0">
-                        <a :href="$parent.getDownloadLink(item)" class="bg-brand hover:brightness-110 text-white text-center py-4 rounded-2xl text-lg font-bold flex items-center justify-center gap-3 transition-all active:scale-95 shadow-xl shadow-brand/20">
-                            下载投影文件
-                        </a>
-                    </div>
+
+                  <div class="pt-6 pb-10 mt-auto">
+                    <a :href="item.downloadLink || $parent.getDownloadLink(item)"
+                       class="bg-[#40B5AD] hover:brightness-110 text-black text-center py-4 rounded-2xl text-lg font-bold flex items-center justify-center gap-3 transition-all active:scale-95 shadow-xl shadow-[#40B5AD]/20">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      下载投影文件
+                    </a>
+                  </div>
                 </div>
             </div>
         </div>
