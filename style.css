@@ -14,6 +14,17 @@ body {
     display: none !important;
 }
 
+.grid > a,
+.grid > div {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 320px; /* 预估高度，防止滚动条抖动 */
+}
+
+.archive-card img {
+    will-change: transform, opacity; /* 提前告诉浏览器这货要变，让它开小灶缓存 */
+    transform: translateZ(0); /* 强制开启 3D 硬件加速 */
+}
+
 /* 自定义滚动条 - Webkit (Chrome, Edge, Safari) */
 ::-webkit-scrollbar {
     width: 8px;
