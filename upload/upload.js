@@ -178,7 +178,6 @@ const UploadApp = {
                     folder: safeFolderName, // 显式记录文件夹名
                     preview: previewPath,   // 内部相对路径
                     filename: this.form.litematicFile.name,
-                    contact: this.form.contact,
                     submitDate: new Date().toISOString()
                 };
 
@@ -202,7 +201,9 @@ const UploadApp = {
 
 ### 📝 基础信息
 - **作者**: ${infoJson.author}
+- **联系方式**: ${this.form.contact || '作者未提供'}
 - **标签**: ${infoJson.tags.join(', ') || '未分类'}
+- **提交时间**: ${new Date().toLocaleString('zh-CN')}
 
 ### 📖 简介内容预览
 ---
