@@ -61,7 +61,7 @@ createApp({
         getDownloadLink(item) {
             // ⚠️ 请修改这里为你的真实 GitHub 地址
             const user = "MC-OpenST";
-            const repo = "OpenST-Archive";
+            const repo = "website";
             const raw = `https://raw.githubusercontent.com/${user}/${repo}/main/archive/${item.id}/${item.filename}`;
             return this.useProxy ? `https://ghfast.top/${raw}` : raw;
         },

@@ -1,31 +1,32 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-// 获取项目根目录
 const root = process.cwd();
+// 1. 扫描的源头：仓库下的 archive 文件夹
 const ARCHIVE_DIR = path.join(root, '../archive');
+// 2. 输出的目标：仓库下的 data/database.json
 const OUTPUT_FILE = path.join(root, '../data/database.json');
 
 async function build() {
-    console.log('🚜 开始收割存档...');
-
-    // 确保 archive 目录存在
-    try { await fs.access(ARCHIVE_DIR); }
-    catch { console.error('❌ 找不到 archive 文件夹！'); return; }
+    console.log('🔍 正在扫描 archive 目录...');
 
     const folders = await fs.readdir(ARCHIVE_DIR);
     const database = [];
 
     for (const folder of folders) {
-        // 排除隐藏文件（如 .git）
         if (folder.startsWith('.')) continue;
 
-        const infoPath = path.join(ARCHIVE_DIR, folder, 'info.json');
+        const folderPath = path.join(ARCHIVE_DIR, folder);
+        const stats = await fs.stat(folderPath);
+        if (!stats.isDirectory()) continue;
 
         try {
+            // 自动寻找存档文件 (不改名，直接抓取)
+            const files = await fs.readdir(folderPath);
+            const archiveFile = files.find(f => f.endsWith('.litematic') || f.endsWith('.zip'));
+
             // 读取 info.json
-            const raw = await fs.readFile(infoPath, 'utf-8');
-            const info = JSON.parse(raw);
+            const info = JSON.parse(await fs.readFile(path.join(folderPath, 'info.json'), 'utf-8'));
 
             database.push({
                 id: folder,
@@ -33,21 +34,19 @@ async function build() {
                 author: info.author || 'Unknown',
                 tags: info.tags || [],
                 description: info.description || '',
-                // 核心路径修正：相对于根目录
+                // 给前端用的相对路径：从 index.html 出发怎么找图片
                 preview: `archive/${folder}/preview.png`,
-                filename: 'schem.litematic'
+                // 记录真实文件名，下载时用
+                filename: archiveFile
             });
-            console.log(`✅ 收录: ${info.name}`);
+            console.log(`✅ 扫描到: ${info.name} (${archiveFile})`);
         } catch (e) {
-            // 忽略非存档文件夹
+            console.error(`❌ 跳过 ${folder}: 缺少文件或 info.json 格式错误`);
         }
     }
 
-    // 写入 data/database.json
-    await fs.mkdir(path.dirname(OUTPUT_FILE), { recursive: true });
     await fs.writeFile(OUTPUT_FILE, JSON.stringify(database, null, 4));
-
-    console.log(`\n✨ 构建完成！共 ${database.length} 个作品。`);
+    console.log(`\n✨ 构建成功！${database.length} 个机器已入库。`);
 }
 
 build();

@@ -46,7 +46,7 @@ createApp({
         },
         // ✨ 补全这个方法，否则 UI 渲染会崩溃
         getDownloadLink(item) {
-            const raw = `https://raw.githubusercontent.com/你的用户名/你的仓库/main/archive/${item.id}/${item.filename}`;
+            const raw = `https://raw.githubusercontent.com/MC-OpenST/website/main/archive/${item.id}/${item.filename}`;
             return this.useProxy ? `https://ghfast.top/${raw}` : raw;
         }
     },
