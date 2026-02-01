@@ -64,31 +64,31 @@ const AppOptions = {
             selectedTags: initialSelected,
             detailItem: null,
             useProxy: true,
-            // ✨ 分页状态管理
+            // 分页状态管理
             currentPage: 1,
             pageSize: 7
         }
     },
     computed: {
-        // 1. 繁简转换后的搜索词（缓存）
+        // 繁简转换后的搜索词（缓存）
         normalizedSearch() {
             return this.normalize(this.searchQuery);
         },
-        // 2. 过滤后的全量数据
+        // 过滤后的全量数据
         fullFilteredList() {
             return Logic.getFilteredList(
                 this.allData,
                 this.normalizedSearch,
                 this.selectedTags,
-                this.normalize // ✨ 传入转换函数
+                this.normalize
             );
         },
 
-        // 3. ✨ 核心：总页数计算
+        // 总页数计算
         totalPages() {
             return Math.ceil(this.fullFilteredList.length / this.pageSize) || 1;
         },
-        // 4. ✨ 核心：切片渲染列表（只给 Vue 渲染这 12 个 DOM）
+        // 切片渲染列表（只给 Vue 渲染这 12 个 DOM）
         pagedList() {
             const start = (this.currentPage - 1) * this.pageSize;
             const end = start + this.pageSize;
@@ -185,11 +185,11 @@ const AppOptions = {
         } catch (e) {
             console.error("❌ 字典加载失败:", e);
 
-            // 2. ✨ 先冻结并同步字典
+            // 2. 先冻结并同步字典
             this.dictSArray = Object.freeze(fs);
             this.dictTArray = Object.freeze(ft);
 
-            // 3. ✨ 最后加载主数据
+            // 3. 最后加载主数据
             // 当 allData 被赋值时，normalizedSearch 计算属性已经可以正确利用字典了
             const rawData = await dataRes.json();
             this.allData = Object.freeze(rawData);

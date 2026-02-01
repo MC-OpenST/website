@@ -11,7 +11,7 @@
             for (let i = 1; i <= 52; i++) {
                 const baseItem = data[i % data.length] || data[0];
 
-                // 📝 构造极端情况
+                // 构造极端情况
                 let testName = `测试存档 ${i}`;
                 let testTags = ["基础"];
 

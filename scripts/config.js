@@ -1,4 +1,4 @@
-// js/config.js
+// config.js
 export const TAG_CONFIG = {
     "物品存储科技": {
         "全物品单片": ["8_chests", "10_chests", "12_chests"],
