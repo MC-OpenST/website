@@ -11,11 +11,9 @@
         tailwind.config = { theme: { extend: { colors: { brand: '#40B5AD', dark: '#1f2223', panel: '#2a2c2d' } } } }
     </script>
 </head>
-<div class="min-h-[100dvh] flex flex-col bg-main">
-</div>
 <body class="bg-dark text-white overflow-hidden font-sans">
 
-<div id="app" v-cloak class="flex flex-col h-screen overflow-hidden">
+<div id="app" v-cloak class="flex flex-col h-screen h-[100dvh] overflow-hidden">
     <nav-bar
             v-model:proxy="useProxy"
             @open-menu="$refs.sidebar.isOpen = true">
