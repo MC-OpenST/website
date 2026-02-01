@@ -157,3 +157,22 @@ body {
 .markdown-body img:active {
     transform: scale(0.98);
 }
+
+/* 图片弹出的缩放动画 */
+@keyframes imageZoomIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.animate-zoom {
+    animation: imageZoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 渐隐渐现 */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+
+/* 全局图片悬停手势（排除掉图标） */
+img:not(nav img):not(button img) {
+    cursor: zoom-in;
+}

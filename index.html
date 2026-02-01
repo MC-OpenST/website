@@ -2,8 +2,6 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" href="images/favicon.png">
-    <link rel="apple-touch-icon" href="images/favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>OpenST Archive</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,33 +12,17 @@
     </script>
 </head>
 <body class="bg-dark text-white overflow-hidden font-sans">
-
-<div id="app" v-cloak class="flex flex-col h-screen h-[100dvh] overflow-hidden">
-    <nav-bar
-            v-model:proxy="useProxy"
-            @open-menu="$refs.sidebar.isOpen = true">
-    </nav-bar>
+<div id="app" v-cloak class="flex flex-col h-screen h-[100dvh] overflow-hidden" @click="handleImageZoom">
+    <nav-bar v-model:proxy="useProxy" @open-menu="$refs.sidebar.isOpen = true"></nav-bar>
 
     <div class="flex flex-1 overflow-hidden relative">
-        <side-bar
-                ref="sidebar"
-                :categories="categories"
-                :groups="dynamicTagGroups"
-                :selected="selectedTags"
-                v-model:search="searchQuery"
-                @reset="resetFilters">
-        </side-bar>
+        <side-bar ref="sidebar" :categories="categories" :groups="dynamicTagGroups" :selected="selectedTags" v-model:search="searchQuery" @reset="resetFilters"></side-bar>
 
         <main class="flex-1 p-6 pb-[20vh] overflow-y-auto bg-dark custom-scrollbar" id="main-content">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 content-start">
-
-                <a href="upload/upload.html"
-                   class="flex flex-col h-full min-h-[320px] items-center justify-center p-6 rounded-[2rem] bg-panel/30 border-2 border-dashed border-white/10 hover:border-brand/50 hover:bg-brand/5 transition-all group lg:col-span-2 xl:col-span-1">
-
+                <a href="upload/upload.html" class="flex flex-col h-full min-h-[320px] items-center justify-center p-6 rounded-[2rem] bg-panel/30 border-2 border-dashed border-white/10 hover:border-brand/50 hover:bg-brand/5 transition-all group lg:col-span-2 xl:col-span-1">
                     <div class="flex flex-col lg:flex-row xl:flex-col items-center gap-4">
-                        <div class="w-16 h-16 rounded-2xl bg-brand/10 flex items-center justify-center text-3xl group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
-                            🚀
-                        </div>
+                        <div class="w-16 h-16 rounded-2xl bg-brand/10 flex items-center justify-center text-3xl group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">🚀</div>
                         <div class="text-center lg:text-left xl:text-center">
                             <h3 class="text-lg font-bold text-white tracking-tight">贡献你的机器</h3>
                             <p class="text-xs text-gray-500 mt-2 leading-relaxed">欢迎分享你的红石科技<br>点击前往投递系统</p>
@@ -48,59 +30,46 @@
                     </div>
                 </a>
 
-                <archive-card
-                        v-for="item in pagedList"
-                        :key="item.id"
-                        :item="{ ...item, preview: getSafePath(item.preview) }"
-                        @open="detailItem = $event">
-                </archive-card>
+                <archive-card v-for="item in pagedList" :key="item.id" :item="{ ...item, preview: getSafePath(item.preview) }" @open="detailItem = $event"></archive-card>
             </div>
 
             <div v-if="totalPages > 1" class="mt-16 mb-32 flex flex-col items-center gap-4">
                 <div class="flex items-center gap-3">
-                    <button @click="setPage(currentPage - 1)"
-                            :disabled="currentPage === 1"
-                            class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:bg-brand hover:text-white disabled:opacity-10 transition-all">
+                    <button @click="setPage(currentPage - 1)" :disabled="currentPage === 1" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:bg-brand hover:text-white disabled:opacity-10 transition-all">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="3"/></svg>
                     </button>
-
                     <div class="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl focus-within:border-brand/50 transition-all">
-                        <input type="number"
-                               :value="currentPage"
-                               @keyup.enter="setPage($event.target.value)"
-                               @blur="setPage($event.target.value)"
-                               class="w-10 bg-transparent text-center text-sm font-bold text-brand outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                        <input type="number" :value="currentPage" @keyup.enter="setPage($event.target.value)" @blur="setPage($event.target.value)" class="w-10 bg-transparent text-center text-sm font-bold text-brand outline-none">
                         <span class="text-gray-600 text-xs">/</span>
                         <span class="text-gray-400 text-sm font-medium pr-1">{{ totalPages }}</span>
                     </div>
-
-                    <button @click="setPage(currentPage + 1)"
-                            :disabled="currentPage === totalPages"
-                            class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:bg-brand hover:text-white disabled:opacity-10 transition-all">
+                    <button @click="setPage(currentPage + 1)" :disabled="currentPage === totalPages" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:bg-brand hover:text-white disabled:opacity-10 transition-all">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="3"/></svg>
                     </button>
                 </div>
-
-                <div class="text-[9px] text-gray-700 tracking-[0.2em] uppercase">
-                    {{ fullFilteredList.length }} Archives Total
-                </div>
             </div>
 
-            <div v-if="fullFilteredList.length === 0" class="py-20 text-center text-gray-500 italic text-sm">
-                没有找到符合条件的红石机械...
-            </div>
-
-            <div v-if="totalPages > 1" class="mt-16 mb-32 flex flex-col items-center gap-4">
-            </div>
-
-            <div v-if="totalPages > 1" class="mt-16 mb-24 flex flex-col items-center gap-4"></div>
+            <div v-if="fullFilteredList.length === 0" class="py-20 text-center text-gray-500 italic text-sm">没有找到符合条件的红石机械...</div>
         </main>
     </div>
 
     <detail-modal v-if="detailItem" :item="detailItem" @close="detailItem = null"></detail-modal>
+
+    <transition name="fade">
+        <div v-if="zoomImage" class="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl cursor-zoom-out" @click.stop="closeZoom">
+            <button class="absolute top-6 right-6 text-white/50 hover:text-brand transition-colors p-2">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5"/></svg>
+            </button>
+            <div class="relative max-w-[95vw] max-h-[85vh] flex flex-col items-center select-none" @click.stop>
+                <img :src="zoomImage.url" class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl border border-white/5 animate-zoom">
+                <div class="mt-6 px-4 py-1.5 bg-brand/10 border border-brand/20 rounded-full backdrop-blur-md">
+                    <span class="text-brand font-mono text-xs">{{ zoomImage.name }}</span>
+                </div>
+            </div>
+        </div>
+    </transition>
 </div>
 <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-<!-- <script src="scripts/mock.js"></script> -->
 <script type="module" src="scripts/main.js"></script>
 </body>
 </html>

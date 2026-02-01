@@ -64,6 +64,7 @@ const AppOptions = {
             selectedTags: initialSelected,
             detailItem: null,
             useProxy: true,
+            zoomImage: null,
             // 分页状态管理
             currentPage: 1,
             pageSize: 7
@@ -104,7 +105,7 @@ const AppOptions = {
         searchQuery() { this.currentPage = 1; }
     },
     methods: {
-        // ✨ 跳转翻页
+        // 跳转翻页
         setPage(p) {
             // 转换为数字并限制范围
             const pageIdx = parseInt(p);
@@ -139,6 +140,21 @@ const AppOptions = {
             return rawPath.split('/')
                 .map(segment => encodeURIComponent(segment))
                 .join('/');
+        },
+        // 全局图片捕获
+        handleImageZoom(e) {
+            const target = e.target || e;
+            if (target.tagName !== 'IMG') return;
+
+            this.zoomImage = {
+                url: target.src,
+                name: decodeURIComponent(target.alt || target.src.split('/').pop().split('?')[0])
+            };
+            document.body.style.overflow = 'hidden';
+        },
+        closeZoom() {
+            this.zoomImage = null;
+            document.body.style.overflow = '';
         },
     },
     async mounted() {
