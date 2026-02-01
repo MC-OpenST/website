@@ -27,8 +27,8 @@ export const SideBar = {
     template: `
     <div class="shrink-0 flex text-[16px]">
         <div v-if="isOpen" @click="isOpen = false" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden"></div>
-        <aside :class="isOpen ? 'translate-x-0' : '-translate-x-full'" 
-               class="fixed inset-y-0 left-0 z-40 w-64 bg-[#191919] p-5 flex flex-col border-r border-white/5 transition-transform duration-300 md:relative md:translate-x-0 h-screen shrink-0">
+        <aside :class="isOpen ? 'translate-x-0' : '-translate-x-full'"
+               class="fixed inset-y-0 left-0 z-50 w-72 bg-[#191919] p-5 flex flex-col border-r border-white/5 transition-transform duration-300 md:relative md:translate-x-0 h-full shrink-0 shadow-2xl md:shadow-none">
             
             <div class="flex flex-col gap-3 mb-6 shrink-0">
                 <div class="relative">
@@ -86,8 +86,8 @@ export const SideBar = {
 export const ArchiveCard = {
     props: ['item'],
     template: `
-    <div class="group bg-panel rounded-[2rem] overflow-hidden border border-white/5 hover:border-brand/40 active:scale-[0.98] transition-all duration-300 shadow-lg flex flex-col text-[16px]">
-        <div class="aspect-video overflow-hidden relative cursor-pointer" @click="$emit('open', item)">
+    <div class="group bg-panel rounded-[2rem] overflow-hidden border border-white/5 hover:border-brand/40 active:scale-[0.98] transition-all duration-300 shadow-lg flex flex-col h-full text-[16px]">
+        <div class="aspect-[16/9] overflow-hidden relative cursor-pointer bg-black/20" @click="$emit('open', item)">
             <img :src="item.preview" 
                  loading="lazy"
                  decoding="async"
@@ -96,21 +96,26 @@ export const ArchiveCard = {
                 <span class="text-sm text-white font-bold bg-black/20 backdrop-blur-sm px-2 py-1 rounded">查看详情</span>
             </div>
         </div>
-        <div class="p-6 flex flex-col gap-4">
-            <div class="cursor-pointer" @click="$emit('open', item)">
-                <h3 class="font-bold text-lg truncate text-gray-100 group-hover:text-brand transition-colors">{{ item.name }}</h3>
-                <p class="text-sm text-gray-500 mt-1">by {{ item.author }}</p>
-            </div>
-            <div class="flex flex-wrap gap-2 mt-auto">
-                <span v-for="(tag, index) in item.tags.slice(0, 3)" :key="index"
-                      class="px-2.5 py-1 rounded-md text-[13px] font-bold border border-transparent"
-                      :class="index === 0 ? 'bg-brand/10 text-brand' : 'bg-white/5 text-gray-400'">
-                    {{ tag }}
-                </span>
-            </div>
+
+      <div class="p-5 flex flex-col flex-1"> <div class="cursor-pointer mb-3" @click="$emit('open', item)">
+        <h3 class="font-bold text-base leading-snug line-clamp-2 h-[2.8rem] text-gray-100 group-hover:text-brand transition-colors">
+          {{ item.name }}
+        </h3>
+        <p class="text-xs text-gray-500 mt-1 truncate">by {{ item.author }}</p>
+      </div>
+
+        <div class="flex flex-wrap gap-1.5 mt-2">
+        <span v-for="(tag, index) in item.tags" :key="index"
+              class="px-2 py-0.5 rounded-md text-[11px] font-bold border border-transparent 
+                     max-w-[90px] truncate inline-block whitespace-nowrap"
+              :title="tag"
+              :class="index === 0 ? 'bg-brand/10 text-brand' : 'bg-white/5 text-gray-400'">
+            {{ tag }}
+        </span>
+        </div>
         </div>
     </div>`
-};
+}
 
 export const DetailModal = {
     props: ['item'],

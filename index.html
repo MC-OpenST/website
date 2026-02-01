@@ -31,16 +31,19 @@
         </side-bar>
 
         <main class="flex-1 p-6 overflow-y-auto bg-dark custom-scrollbar" id="main-content">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 content-start">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 content-start">
 
                 <a href="upload/upload.html"
-                   class="flex flex-col h-full min-h-[320px] items-center justify-center p-6 rounded-[2rem] bg-panel/30 border-2 border-dashed border-white/10 hover:border-brand/50 hover:bg-brand/5 transition-all group">
-                    <div class="w-16 h-16 rounded-2xl bg-brand/10 flex items-center justify-center text-3xl mb-4 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
-                        🚀
-                    </div>
-                    <div class="text-center">
-                        <h3 class="text-lg font-bold text-white tracking-tight">贡献你的机器</h3>
-                        <p class="text-xs text-gray-500 mt-2 leading-relaxed">欢迎分享你的红石科技<br>点击前往投递系统</p>
+                   class="flex flex-col h-full min-h-[320px] items-center justify-center p-6 rounded-[2rem] bg-panel/30 border-2 border-dashed border-white/10 hover:border-brand/50 hover:bg-brand/5 transition-all group lg:col-span-2 xl:col-span-1">
+
+                    <div class="flex flex-col lg:flex-row xl:flex-col items-center gap-4">
+                        <div class="w-16 h-16 rounded-2xl bg-brand/10 flex items-center justify-center text-3xl group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
+                            🚀
+                        </div>
+                        <div class="text-center lg:text-left xl:text-center">
+                            <h3 class="text-lg font-bold text-white tracking-tight">贡献你的机器</h3>
+                            <p class="text-xs text-gray-500 mt-2 leading-relaxed">欢迎分享你的红石科技<br>点击前往投递系统</p>
+                        </div>
                     </div>
                 </a>
 
@@ -91,6 +94,7 @@
     <detail-modal v-if="detailItem" :item="detailItem" @close="detailItem = null"></detail-modal>
 </div>
 <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<!-- <script src="scripts/mock.js"></script> -->
 <script type="module" src="scripts/main.js"></script>
 </body>
 </html>
