@@ -4,6 +4,26 @@
 .text-xs { font-size: 0.9rem !important; }        /* 原本12px -> 提升到14.4px */
 .text-sm { font-size: 1.1rem !important; }        /* 原本14px -> 提升到17.6px */
 
+/* 1. 电脑端：保持最纯粹的布局，零额外 Padding */
+#main-content {
+    position: relative;
+    padding-bottom: 0;
+}
+
+/* 2. 只有在【移动端触摸设备】上，才激活 Safari 补偿逻辑 */
+@media (pointer: coarse) {
+    /* 针对 iOS Safari 动态加高 */
+    @supports (-webkit-touch-callout: none) {
+        #main-content::after {
+            content: "";
+            display: block;
+            height: calc(env(safe-area-inset-bottom, 20px) + 120px);
+            width: 100%;
+            pointer-events: none;
+        }
+    }
+}
+
 /* 优化字体粗细，大字号配合中等字重更好看 */
 body {
     -webkit-font-smoothing: antialiased;
