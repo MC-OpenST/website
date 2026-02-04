@@ -6,10 +6,9 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 2. 这里的 path.resolve(__dirname, '..') 会准确指向仓库根目录 (website/)
 const root = path.resolve(__dirname, '../../');
 
-// 3. 拼接目标路径
+// 2. 拼接目标路径
 const ARCHIVE_DIR = path.join(root, 'archive');
 const OUTPUT_FILE = path.join(root, 'data/database.json');
 
