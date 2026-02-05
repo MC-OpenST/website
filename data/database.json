@@ -9,18 +9,6 @@
         "filename": "1.13_6_and_7_Bit_Rail_Bud_Decoders[解码器] (1).litematic"
     },
     {
-        "id": "64倍速高速分盒器【64X Compact Ideal Splitter】",
-        "name": "64倍速高速分盒器【64X Compact Ideal Splitter】",
-        "author": "Andrews54757",
-        "tags": [
-            "分盒器",
-            "1.19+"
-        ],
-        "description": "### 🚀 机器概览\n- **核心功能**: 混杂盒提纯，同种物品最多产生一个不满盒，最高64倍速\n- **适用版本**: Java 1.19.+\n\n### 📖 使用说明\n1. 无静态车，打包漏斗全锁\n2. 堆车拆包+堆车刷新物品存活时间  \n3. 结构紧凑。64倍版本尺寸为43x16x14  \n4. 理想的输出——*ideal* 即每类物品都被整理至最少数量的盒子中，每类最多只有一个盒子未装满，其余盒子均为满盒\n\n> 提示：实体产生的卡顿随单批次输入物品数量呈二次方增长，建议将批次大小限制为两箱盒的容量内",
-        "preview": "archive/64倍速高速分盒器【64X Compact Ideal Splitter】/preview.png",
-        "filename": ""
-    },
-    {
         "id": "8gt全锁全冰道10箱单片",
         "name": "8gt全锁全冰道10箱单片",
         "author": "Lirrum",
