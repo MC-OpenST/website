@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenST Admin Packer (Responsive)</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 防止 Vue 挂载前闪烁源码 */
+        [v-cloak] { display: none; }
+
+        /* --- OpenST 品牌色系统 (#40B5AD) --- */
+        .text-brand { color: #40B5AD; }
+        .bg-brand { background-color: #40B5AD; }
+        .border-brand { border-color: #40B5AD; }
+
+        /* --- Markdown 全功能美化 --- */
+        .markdown-body { line-height: 1.6; }
+
+        /* 标题层级 */
+        .markdown-body h1 { font-size: 1.5rem; color: #fff; border-bottom: 2px solid #40B5AD; padding-bottom: 0.3rem; margin: 1.5rem 0 1rem; }
+        .markdown-body h2 { font-size: 1.25rem; border-left: 4px solid #40B5AD; padding-left: 0.75rem; margin: 1.2rem 0 0.8rem; }
+        .markdown-body h3 { font-size: 1.1rem; color: #40B5AD; margin: 1rem 0 0.5rem; font-weight: bold; }
+
+        /* 列表与任务 */
+        .markdown-body ul { list-style-type: disc; padding-left: 1.5rem; margin: 1rem 0; }
+        .markdown-body ol { list-style-type: decimal; padding-left: 1.5rem; margin: 1rem 0; }
+        .markdown-body input[type="checkbox"] {
+            accent-color: #40B5AD;
+            width: 1rem; height: 1rem;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+
+        /* 文本效果 */
+        .markdown-body strong { color: #fff; font-weight: bold; }
+        .markdown-body del { color: #555; text-decoration: line-through; } /* 横线/删除线 */
+        .markdown-body blockquote { border-left: 4px solid #2a6a65; padding-left: 1rem; color: #888; background: rgba(64,181,173,0.05); padding: 8px 16px; border-radius: 0 8px 8px 0; }
+
+        /* 超链接与行内代码 */
+        .markdown-body a { color: #40B5AD; text-decoration: underline; text-underline-offset: 4px; }
+        .markdown-body a:hover { filter: brightness(1.2); }
+        .markdown-body code { background: rgba(64,181,173,0.15); color: #40B5AD; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; }
+
+        /* 1. 针对所有滚动条的通用定义 */
+        ::-webkit-scrollbar {
+            width: 6px;  /* 纵向滚动条宽度 */
+            height: 6px; /* 横向滚动条高度 */
+        }
+
+        /* 2. 滚动条轨道 (背景) */
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02); /* 几乎透明的深色背景 */
+            border-radius: 10px;
+        }
+
+        /* 3. 滚动条滑块 (滑块本身) */
+        ::-webkit-scrollbar-thumb {
+            background: rgba(64, 181, 173, 0.2); /* 品牌色 #40B5AD 的低透明度版 */
+            border-radius: 10px;
+            transition: background 0.3s ease;
+        }
+
+        /* 4. 鼠标悬停在滑块上时，颜色变亮 */
+        ::-webkit-scrollbar-thumb:hover {
+            background: #40B5AD; /* 变回完全的品牌色 */
+            box-shadow: 0 0 8px rgba(64, 181, 173, 0.4); /* 增加一点点发光感 */
+        }
+
+        /* 5. 针对特定的预览容器添加平滑滚动 */
+        /* 给简介容器加固 */
+        .markdown-body {
+            /* 1. 遇到超长单词或 URL 强制换行，不许超出边界 */
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-word;
+
+            /* 2. 避免图片或代码块太大撑开容器 */
+            max-width: 100%;
+        }
+
+        /* 针对代码块，给它一个横向滚动条，而不是让它撑开整个页面 */
+        .markdown-body pre {
+            overflow-x: auto;
+            max-width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 0.75rem;
+        }
+
+        .markdown-body img {
+            border-radius: 0.5rem;
+            cursor: zoom-in;
+            transition: transform 0.2s;
+        }
+        .markdown-body img:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="bg-[#0f172a] text-slate-200 p-4 md:p-8">
+
+<div id="app" class="max-w-6xl mx-auto transition-all" :class="{'opacity-50 pointer-events-none': isProcessing}">
+
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div>
+            <h1 class="text-2xl font-black text-[#40B5AD] tracking-tighter italic">ADMIN PACKER PRO</h1>
+            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Responsive Factory Mode</p>
+        </div>
+        <div v-if="isProcessing" class="flex items-center gap-2 text-[#40B5AD] bg-[#40B5AD]/10 px-4 py-2 rounded-full border border-[#40B5AD]/20">
+            <span class="animate-spin">⚙️</span>
+            <span class="text-xs font-bold uppercase">Packing & Downloading...</span>
+        </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
+
+        <div class="space-y-6 order-1">
+            <div class="grid grid-cols-2 gap-4">
+                <label class="border-2 border-dashed border-slate-700 p-4 rounded-2xl text-center cursor-pointer hover:border-[#40B5AD]/50 hover:bg-[#40B5AD]/5 transition-all">
+                    <span class="block text-2xl mb-1">🖼️</span>
+                    <p class="text-[10px] font-bold uppercase truncate px-2" :class="previewFile ? 'text-[#40B5AD]' : 'text-slate-500'">
+                        {{ previewFile ? previewFile.name : 'Image' }}
+                    </p>
+                    <input type="file" ref="previewInput" @change="e => previewFile = e.target.files[0]" class="hidden" accept="image/*">
+                </label>
+                <label class="border-2 border-dashed border-slate-700 p-4 rounded-2xl text-center cursor-pointer hover:border-[#40B5AD]/50 hover:bg-[#40B5AD]/5 transition-all">
+                    <span class="block text-2xl mb-1">📦</span>
+                    <p class="text-[10px] font-bold uppercase truncate px-2" :class="litematicFile ? 'text-[#40B5AD]' : 'text-slate-500'">
+                        {{ litematicFile ? litematicFile.name : 'Schem' }}
+                    </p>
+                    <input type="file" ref="litematicInput" @change="e => litematicFile = e.target.files[0]" class="hidden" accept=".litematic">
+                </label>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4">
+                <input v-model="form.name" placeholder="作品名称" class="flex-1 bg-black/40 border border-white/10 p-3 rounded-xl text-white focus:border-[#40B5AD] outline-none text-sm">
+                <input v-model="form.author" placeholder="作者" class="sm:w-1/3 bg-black/40 border border-white/10 p-3 rounded-xl text-white focus:border-[#40B5AD] outline-none text-sm">
+            </div>
+
+            <div class="space-y-2">
+                <textarea v-model="form.desc" placeholder="Markdown 简介..."
+                          class="w-full bg-black/40 border border-white/10 p-4 rounded-xl text-white h-48 lg:h-64 resize-none outline-none focus:border-[#40B5AD] font-mono text-sm scrollbar-custom"></textarea>
+            </div>
+
+            <div class="space-y-4 bg-black/20 p-4 rounded-2xl border border-white/5">
+                <div v-for="(tags, cat) in flatConfig" :key="cat" class="space-y-2">
+                    <p class="text-[9px] text-[#40B5AD]/50 font-bold uppercase tracking-widest">{{ cat }}</p>
+                    <div class="flex flex-wrap gap-2">
+                        <button v-for="tag in tags" :key="tag" @click="toggleTag(tag)"
+                                :class="form.tags.includes(tag) ? 'bg-[#40B5AD] text-slate-900 border-[#40B5AD]' : 'bg-white/5 text-slate-500 border-white/10'"
+                                class="px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all uppercase tracking-tight">
+                            {{ tag }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button @click="generateZip" :disabled="!isReady || isProcessing"
+                    class="w-full bg-[#40B5AD] hover:brightness-110 disabled:opacity-10 text-slate-900 font-black py-5 rounded-2xl transition-all shadow-xl shadow-[#40B5AD]/10 active:scale-95 text-sm uppercase tracking-widest">
+                {{ isProcessing ? 'Working...' : 'Pack & Download' }}
+            </button>
+        </div>
+
+        <div class="flex flex-col order-2 lg:border-l lg:border-white/5 lg:pl-12">
+            <p class="text-[10px] text-[#40B5AD] font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-[#40B5AD]"></span>
+                Live Preview
+            </p>
+            <div class="bg-white/[0.02] border border-white/5 p-6 rounded-3xl overflow-y-auto scrollbar-custom markdown-body min-h-[200px] max-h-[400px] lg:max-h-full lg:flex-grow">
+                <div v-if="form.desc" v-html="previewHtml"></div>
+                <div v-else class="text-slate-600 text-xs italic italic">No description to preview...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { TAG_CONFIG } from '../scripts/config.js';
+    const { createApp } = Vue;
+    createApp({
+        data() {
+            return {
+                config: TAG_CONFIG,
+                previewFile: null,
+                litematicFile: null,
+                isProcessing: false,
+                form: {
+                    name: '',
+                    author: '',
+                    tags: [],
+                    desc: '### 🚀 机器概览\n- **核心功能**: \n- **适用版本**: Java 1.20.x\n\n### 📖 使用说明\n1. \n\n> 提示：'
+                }
+            }
+        },
+        computed: {
+            isReady() { return this.form.name && this.previewFile && this.litematicFile; },
+            previewHtml() { return marked.parse(this.form.desc || ''); },
+            flatConfig() {
+                const res = {};
+                for (let k in this.config) {
+                    res[k] = Array.isArray(this.config[k]) ? this.config[k] : Object.values(this.config[k]).flat();
+                }
+                return res;
+            }
+        },
+        methods: {
+            toggleTag(tag) {
+                const i = this.form.tags.indexOf(tag);
+                i > -1 ? this.form.tags.splice(i, 1) : this.form.tags.push(tag);
+            },
+            async generateZip() {
+                if (this.isProcessing) return;
+                this.isProcessing = true;
+                try {
+                    const zip = new JSZip();
+                    const now = new Date();
+                    const previewExt = this.previewFile.name.split('.').pop().toLowerCase();
+                    const previewName = `preview.${previewExt}`;
+                    const zipFileName = `${this.form.name.replace(/[\\/:*?"<>|]/g, '_')}.zip`;
+
+                    const infoJson = {
+                        "id": `sub-${now.getTime()}`,
+                        "name": this.form.name,
+                        "author": this.form.author || '未知',
+                        "tags": this.form.tags,
+                        "description": this.form.desc,
+                        "folder": this.form.name,
+                        "preview": previewName,
+                        "filename": this.litematicFile.name,
+                        "submitDate": now.toISOString()
+                    };
+
+                    const folder = zip.folder(this.form.name);
+                    folder.file("info.json", JSON.stringify(infoJson, null, 4));
+                    folder.file(previewName, this.previewFile);
+                    folder.file(this.litematicFile.name, this.litematicFile);
+
+                    const blob = await zip.generateAsync({type: "blob"});
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = zipFileName;
+                    a.click();
+
+                    setTimeout(() => {
+                        window.URL.revokeObjectURL(url);
+                        this.resetEverything();
+                        this.isProcessing = false;
+                    }, 500);
+                } catch (e) {
+                    alert("Error: " + e.message);
+                    this.isProcessing = false;
+                }
+            },
+            resetEverything() {
+                this.form = { name: '', author: '', tags: [], desc: '### 🚀 机器概览\n- **核心功能**: \n- **适用版本**: Java 1.20.x\n\n### 📖 使用说明\n1. \n\n> 提示：' };
+                this.previewFile = null;
+                this.litematicFile = null;
+                if(this.$refs.previewInput) this.$refs.previewInput.value = '';
+                if(this.$refs.litematicInput) this.$refs.litematicInput.value = '';
+            }
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
