@@ -86,8 +86,14 @@ const UploadApp = {
             localStorage.removeItem('gh_auth');
         },
         loginWithGitHub() {
-            const redirect_uri = window.location.origin + window.location.pathname;
-            window.location.href = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=public_repo&redirect_uri=${redirect_uri}`;
+            const redirect_uri = window.location.href.split('?')[0];
+
+            const authUrl = `https://github.com/login/oauth/authorize` +
+                `?client_id=${CLIENT_ID}` +
+                `&scope=public_repo` +
+                `&redirect_uri=${encodeURIComponent(redirect_uri)}`; // 必须进行 URL 编码
+
+            window.location.href = authUrl;
         },
         toggleTag(tag) {
             const i = this.form.tags.indexOf(tag);
