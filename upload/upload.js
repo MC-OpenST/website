@@ -2,30 +2,151 @@ import { TAG_CONFIG } from '../scripts/config.js';
 
 const { createApp } = Vue;
 
+const WORKER_URL = 'https://submission-openst.weizhihan3.workers.dev';
+const CLIENT_ID = 'Ov23liTildfj3XAkvbr8';
+const GH_REPO = 'MC-OpenST/Submissions';
+
 const UploadApp = {
     data() {
         return {
             config: TAG_CONFIG,
-            step: 1, // 1: 填写, 2: 打包中, 3: 完成引导
+            step: 1,
+            userToken: '',
             form: {
                 name: '',
                 author: '',
                 contact: '',
-                desc: `### 🚀 机器概览（示例）
-- **核心功能**: 
-- **适用版本**: Java 1.20.x
-
-### 📖 使用说明
-1. 说明1
-2. 说明2
-
-> 提示：本机器支持横向堆叠。`,
+                desc: `### 🚀 机器概览（示例）\n- **核心功能**: \n- **适用版本**: Java 1.20.x\n\n### 📖 使用说明\n1. 说明1\n2. 说明2\n\n> 提示：本机器支持横向堆叠。`,
                 tags: [],
                 previewFile: null,
                 litematicFile: null
             },
-            zipDownloadUrl: '',
             githubIssueUrl: ''
+        }
+    },
+
+    async mounted() {
+        // 1. 检查本地存储
+        this.checkLoginExpiry();
+
+        // 2. 处理 OAuth 回调
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        if (code) {
+            this.step = 2; // 显示“正在认证”状态
+            try {
+                const res = await fetch(`${WORKER_URL}/api/exchange-token?code=${code}`);
+                const data = await res.json();
+                if (data.access_token) {
+                    this.saveAuth(data.access_token);
+                    const cleanUrl = window.location.origin + window.location.pathname;
+                    window.history.replaceState({}, document.title, cleanUrl);
+                }
+            } catch (e) {
+                alert("GitHub 认证失败");
+            }
+            this.step = 1;
+        }
+    },
+
+    computed: {
+        previewHtml() {
+            if (!this.form.desc) return '<span class="text-gray-600 italic">在此输入简介...</span>';
+            return typeof marked !== 'undefined' ? marked.parse(this.form.desc) : 'Markdown 插件加载中...';
+        },
+        flatConfig() {
+            const res = {};
+            for (let k in this.config) {
+                res[k] = Array.isArray(this.config[k]) ? this.config[k] : Object.values(this.config[k]).flat();
+            }
+            return res;
+        },
+        isReady() {
+            return this.form.name && this.form.previewFile && this.form.litematicFile;
+        }
+    },
+
+    methods: {
+        saveAuth(token) {
+            this.userToken = token;
+            const authData = { token: token, timestamp: new Date().getTime() };
+            localStorage.setItem('gh_auth', JSON.stringify(authData));
+        },
+        checkLoginExpiry() {
+            const rawData = localStorage.getItem('gh_auth');
+            if (!rawData) return;
+            try {
+                const authData = JSON.parse(rawData);
+                const isExpired = (new Date().getTime() - authData.timestamp) > 7 * 24 * 60 * 60 * 1000;
+                if (isExpired) { this.logout(); } else { this.userToken = authData.token; }
+            } catch (e) { this.logout(); }
+        },
+        logout() {
+            this.userToken = '';
+            localStorage.removeItem('gh_auth');
+        },
+        loginWithGitHub() {
+            const redirect_uri = window.location.origin + window.location.pathname;
+            window.location.href = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=public_repo&redirect_uri=${redirect_uri}`;
+        },
+        toggleTag(tag) {
+            const i = this.form.tags.indexOf(tag);
+            i > -1 ? this.form.tags.splice(i, 1) : this.form.tags.push(tag);
+        },
+        async handleUpload() {
+            if (!this.userToken) return;
+            this.step = 2;
+            try {
+                const zip = new JSZip();
+                const folderName = this.form.name;
+                const folder = zip.folder(folderName);
+                const previewExt = this.form.previewFile.name.split('.').pop().toLowerCase();
+                const previewFileName = `preview.${previewExt}`;
+                const now = new Date();
+
+                const infoJson = {
+                    "id": `sub-${now.getTime()}`,
+                    "name": this.form.name,
+                    "author": this.form.author || '匿名',
+                    "tags": this.form.tags,
+                    "description": this.form.desc,
+                    "folder": folderName,
+                    "preview": previewFileName,
+                    "filename": `submission_${this.form.name}.zip`,
+                    "submitDate": now.toISOString()
+                };
+
+                folder.file("info.json", JSON.stringify(infoJson, null, 4));
+                folder.file(previewFileName, this.form.previewFile);
+                folder.file(this.form.litematicFile.name, this.form.litematicFile);
+                const zipBlob = await zip.generateAsync({ type: "blob" });
+
+                const fd = new FormData();
+                fd.append('name', this.form.name);
+                fd.append('zip', zipBlob, `submission_${this.form.name}.zip`);
+                fd.append('preview', this.form.previewFile);
+
+                const workerRes = await fetch(WORKER_URL, { method: 'POST', body: fd });
+                if (!workerRes.ok) throw new Error('Worker 文件中继失败');
+                const { filePath } = await workerRes.json();
+                const domesticDownloadUrl = `${WORKER_URL}/dl/${filePath}`;
+
+                const issueBody = `## 🚀 机器投递: ${this.form.name}\n> [!IMPORTANT]\n> **存档审核直连下载 (国内加速)**: [📥 点击下载投稿全量包](${domesticDownloadUrl})\n\n### 📋 自动生成配置\n\`\`\`json\n${JSON.stringify(infoJson, null, 4)}\n\`\`\`\n---\n**📝 投稿详情**\n- **作者**: ${this.form.author}\n- **简介**: ${this.form.desc}`;
+
+                const ghRes = await fetch(`https://api.github.com/repos/${GH_REPO}/issues`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `token ${this.userToken}`, 'Accept': 'application/vnd.github.v3+json' },
+                    body: JSON.stringify({ title: `[待审] ${this.form.name} @${this.form.author}`, body: issueBody })
+                });
+
+                if (!ghRes.ok) throw new Error('GitHub 提交失败');
+                const ghData = await ghRes.json();
+                this.githubIssueUrl = ghData.html_url;
+                this.step = 3;
+            } catch (e) {
+                alert("投递失败: " + e.message);
+                this.step = 1;
+            }
         }
     },
     template: `
@@ -37,12 +158,31 @@ const UploadApp = {
                     <h2 class="text-2xl font-bold text-white tracking-tight">机器存档投递</h2>
                     <p class="text-[#40B5AD] text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Submission Portal</p>
                 </div>
-                <a href="../index.html" class="text-gray-500 hover:text-white transition-all text-sm border border-white/10 px-4 py-2 rounded-full">返回首页</a>
+                <div class="flex items-center gap-4">
+                    <button v-if="userToken" @click="logout" class="text-xs text-red-500/60 hover:text-red-500 underline uppercase tracking-widest">注销登录</button>
+                    <a href="../index.html" class="text-gray-500 hover:text-white transition-all text-sm border border-white/10 px-4 py-2 rounded-full">返回首页</a>
+                </div>
             </div>
 
             <div class="p-8">
-                <div v-if="step === 1" class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    
+                <div v-if="!userToken && step === 1" class="py-20 text-center space-y-8 animate-in fade-in zoom-in-95 duration-500">
+                    <div class="w-20 h-20 bg-[#40B5AD]/10 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-[#40B5AD]/20 rotate-3">
+                        <span class="text-4xl">🔑</span>
+                    </div>
+                    <div class="max-w-xs mx-auto space-y-3">
+                        <h3 class="text-2xl font-bold text-white">身份验证</h3>
+                        <p class="text-gray-500 text-sm leading-relaxed">
+                            为了维护社区秩序，我们需要关联您的 GitHub 账号以确认作者身份。
+                        </p>
+                    </div>
+                    <button @click="loginWithGitHub" class="inline-flex items-center gap-3 bg-white text-black px-10 py-4 rounded-2xl font-bold hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/5">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                        使用 GitHub 账号登录
+                    </button>
+                    <p class="text-[10px] text-gray-600 uppercase tracking-widest font-bold">Secure Authorization via GitHub OAuth</p>
+                </div>
+
+                <div v-if="userToken && step === 1" class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <label class="group border-2 border-dashed border-white/10 p-8 rounded-3xl flex flex-col items-center cursor-pointer hover:border-[#40B5AD]/40 hover:bg-[#40B5AD]/5 transition-all text-center">
                             <span class="text-3xl transition-transform group-hover:scale-110">🖼️</span>
@@ -53,7 +193,6 @@ const UploadApp = {
                             </div>
                             <input type="file" @change="e => form.previewFile = e.target.files[0]" class="hidden" accept="image/*">
                         </label>
-
                         <label class="group border-2 border-dashed border-white/10 p-8 rounded-3xl flex flex-col items-center cursor-pointer hover:border-[#40B5AD]/40 hover:bg-[#40B5AD]/5 transition-all text-center">
                             <span class="text-3xl transition-transform group-hover:scale-110">📦</span>
                             <div class="mt-3">
@@ -67,22 +206,19 @@ const UploadApp = {
 
                     <div class="space-y-4">
                         <div class="grid grid-cols-2 gap-4">
-                            <input v-model="form.name" placeholder="作品名称 (# 和 / 等字符不支持)" class="bg-black/40 border border-white/10 p-4 rounded-xl text-white focus:border-[#40B5AD] outline-none transition-all">
+                            <input v-model="form.name" placeholder="作品名称" class="bg-black/40 border border-white/10 p-4 rounded-xl text-white focus:border-[#40B5AD] outline-none transition-all">
                             <input v-model="form.author" placeholder="你的名称" class="bg-black/40 border border-white/10 p-4 rounded-xl text-white focus:border-[#40B5AD] outline-none transition-all">
                         </div>
-                        <input v-model="form.contact" placeholder="联系方式 (Markdown注释隐藏，仅管理员可见)" class="w-full bg-black/40 border border-white/10 p-4 rounded-xl text-white focus:border-[#40B5AD] outline-none transition-all">
+                        <input v-model="form.contact" placeholder="联系方式" class="w-full bg-black/40 border border-white/10 p-4 rounded-xl text-white focus:border-[#40B5AD] outline-none transition-all">
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="flex flex-col space-y-2">
                                 <span class="text-[10px] text-gray-500 font-bold uppercase px-1">编辑简介 (Markdown)</span>
-                                <textarea v-model="form.desc" 
-                                          class="w-full bg-black/40 border border-white/10 p-4 rounded-xl text-white h-64 focus:border-[#40B5AD] outline-none resize-none font-mono text-sm scrollbar-custom"></textarea>
+                                <textarea v-model="form.desc" class="w-full bg-black/40 border border-white/10 p-4 rounded-xl text-white h-64 focus:border-[#40B5AD] outline-none resize-none font-mono text-sm scrollbar-custom"></textarea>
                             </div>
                             <div class="flex flex-col space-y-2">
                                 <span class="text-[10px] text-[#40B5AD] font-bold uppercase px-1">实时渲染预览</span>
-                                <div v-html="previewHtml" 
-                                     class="w-full bg-white/[0.02] border border-white/5 p-4 rounded-xl text-gray-400 h-64 overflow-y-auto markdown-body text-sm scrollbar-custom">
-                                </div>
+                                <div v-html="previewHtml" class="w-full bg-white/[0.02] border border-white/5 p-4 rounded-xl text-gray-400 h-64 overflow-y-auto markdown-body text-sm scrollbar-custom"></div>
                             </div>
                         </div>
                     </div>
@@ -101,134 +237,35 @@ const UploadApp = {
                         </div>
                     </div>
 
-                    <button @click="handlePack" :disabled="!isReady"
+                    <button @click="handleUpload" :disabled="!isReady"
                             class="w-full bg-[#40B5AD] text-black py-5 rounded-2xl font-bold text-lg shadow-xl shadow-[#40B5AD]/20 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-20 disabled:grayscale">
-                        生成并下载投稿包
+                        确认并提交投稿
                     </button>
                 </div>
 
-                <div v-if="step === 2" class="py-24 text-center space-y-6 animate-pulse">
-                    <div class="text-5xl">📦</div>
-                    <h3 class="text-2xl font-bold text-white">正在执行压缩...</h3>
+                <div v-if="step === 2" class="py-24 text-center space-y-6">
+                    <div class="text-5xl animate-bounce">🚀</div>
+                    <h3 class="text-2xl font-bold text-white tracking-widest">上传中</h3>
+                    <p class="text-gray-500">正在上传至服务器</p>
                 </div>
 
                 <div v-if="step === 3" class="py-12 text-center space-y-8 animate-in zoom-in-95">
                     <div class="text-6xl">🎉</div>
-                    <h3 class="text-2xl font-bold text-white">打包完成！</h3>
-                    
-                    <div class="grid grid-cols-1 gap-4 max-w-sm mx-auto">
-                        <a :href="zipDownloadUrl" download="submission.zip" class="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-all group">
-                            <span class="bg-[#40B5AD] text-black w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold">1</span>
-                            <p class="text-sm group-hover:text-[#40B5AD] transition-colors">重新下载 submission.zip</p>
-                        </a>
-                        <a :href="githubIssueUrl" target="_blank" class="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-all group border-brand/20">
-                            <span class="bg-[#40B5AD] text-black w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold">2</span>
-                            <p class="text-sm text-left font-bold group-hover:text-[#40B5AD] transition-colors">前往 GitHub 提交 Issue</p>
-                        </a>
+                    <h3 class="text-2xl font-bold text-white">投递成功！</h3>
+                    <div class="max-w-sm mx-auto p-6 bg-white/5 rounded-2xl border border-white/10">
+                        <p class="text-sm text-gray-400 leading-relaxed">
+                            作品已登记。我们将在1-2周内尽量完成审核！如果超过我们深感抱歉！。
+                        </p>
                     </div>
-                    <button @click="step = 1" class="text-gray-500 text-xs hover:text-white transition-all underline underline-offset-4">← 返回修改信息</button>
+                    <a :href="githubIssueUrl" target="_blank" class="inline-block bg-[#40B5AD] text-black px-8 py-4 rounded-2xl font-bold shadow-lg hover:scale-105 transition-all">
+                        查看审核 Issue
+                    </a>
+                    <br>
+                    <button @click="step = 1" class="text-gray-500 text-xs hover:text-white transition-all underline">投递下一个项目</button>
                 </div>
             </div>
         </div>
     </div>`,
-
-    computed: {
-        previewHtml() {
-            if (!this.form.desc) return '<span class="text-gray-600 italic">在此输入简介...</span>';
-            // 确保全局引入了 marked.js
-            return typeof marked !== 'undefined' ? marked.parse(this.form.desc) : 'Markdown 库未加载';
-        },
-        flatConfig() {
-            const res = {};
-            for (let k in this.config) {
-                res[k] = Array.isArray(this.config[k]) ? this.config[k] : Object.values(this.config[k]).flat();
-            }
-            return res;
-        },
-        isReady() {
-            return this.form.name && this.form.previewFile && this.form.litematicFile;
-        }
-    },
-
-    methods: {
-        toggleTag(tag) {
-            const i = this.form.tags.indexOf(tag);
-            i > -1 ? this.form.tags.splice(i, 1) : this.form.tags.push(tag);
-        },
-        async handlePack() {
-            this.step = 2;
-            try {
-                const zip = new JSZip();
-
-                // 1. 【特殊字符处理】针对作品名清洗掉 URL 敏感字符 (# 和 /)
-                const safeFolderName = this.form.name.replace(/[#\\/]/g, '_');
-                const folder = zip.folder(safeFolderName);
-
-                // 2. 预览图后缀处理
-                const previewExt = this.form.previewFile.name.split('.').pop().toLowerCase();
-                const previewPath = `preview.${previewExt}`;
-
-                // 3. 构建 info.json
-                const infoJson = {
-                    id: `sub-${Date.now()}`,
-                    name: this.form.name,
-                    author: this.form.author || '匿名',
-                    tags: this.form.tags,
-                    description: this.form.desc,
-                    folder: safeFolderName, // 显式记录文件夹名
-                    preview: previewPath,   // 内部相对路径
-                    filename: this.form.litematicFile.name,
-                    submitDate: new Date().toISOString()
-                };
-
-                // 4. 将文件压入子文件夹
-                folder.file("info.json", JSON.stringify(infoJson, null, 4));
-                folder.file(previewPath, this.form.previewFile);
-                folder.file(this.form.litematicFile.name, this.form.litematicFile);
-
-                const content = await zip.generateAsync({ type: "blob" });
-                if (this.zipDownloadUrl) URL.revokeObjectURL(this.zipDownloadUrl);
-                this.zipDownloadUrl = URL.createObjectURL(content);
-
-                // 外层固定名称，解决 GitHub Issue 附件无法点击问题
-                const safeZipName = "submission.zip";
-
-                const body = `## 🚀 机器投稿: ${this.form.name}
-
-> [!IMPORTANT]
-> **请直接将刚才下载的 \`${safeZipName}\` 拖入下方上传！**
-> 作品文件夹标识: \`${safeFolderName}\`
-
-### 📝 基础信息
-- **作者**: ${infoJson.author}
-- **联系方式**: ${this.form.contact || '作者未提供'}
-- **标签**: ${infoJson.tags.join(', ') || '未分类'}
-- **提交时间**: ${new Date().toLocaleString('zh-CN')}
-
-### 📖 简介内容预览
----
-${this.form.desc || '暂无描述'}
----
-
-_Generated by OpenST Portal 4.0_`;
-
-// 编码 URL，确保特殊字符不会导致链接断裂
-                this.githubIssueUrl = `https://github.com/MC-OpenST/Submissions/issues/new?title=${encodeURIComponent('[投稿] ' + this.form.name)}&body=${encodeURIComponent(body)}`;
-
-                // 6. 触发自动下载
-                const link = document.createElement('a');
-                link.href = this.zipDownloadUrl;
-                link.download = safeZipName;
-                link.click();
-
-                this.step = 3;
-            } catch (e) {
-                console.error(e);
-                alert("打包出错: " + e.message);
-                this.step = 1;
-            }
-        }
-    }
 };
 
 createApp(UploadApp).mount('#app');
