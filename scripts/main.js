@@ -52,7 +52,8 @@ const AppOptions = {
     },
     data() {
         const initialSelected = {};
-        CATEGORIES.forEach(cat => { initialSelected[cat] = null; });
+        // 1. 修改点：初始化为数组 [] 支持多项激活
+        CATEGORIES.forEach(cat => { initialSelected[cat] = []; });
 
         return {
             allData: [],
@@ -65,7 +66,6 @@ const AppOptions = {
             detailItem: null,
             useProxy: true,
             zoomImage: null,
-            // 分页状态管理
             currentPage: 1,
             pageSize: 7
         }
@@ -124,10 +124,16 @@ const AppOptions = {
             }).join('');
         },
         toggleTag(cat, tag) {
-            this.selectedTags[cat] = this.selectedTags[cat] === tag ? null : tag;
+            const list = this.selectedTags[cat];
+            const index = list.indexOf(tag);
+            if (index > -1) {
+                list.splice(index, 1);
+            } else {
+                list.push(tag);
+            }
         },
         resetFilters() {
-            this.categories.forEach(c => this.selectedTags[c] = null);
+            this.categories.forEach(c => this.selectedTags[c] = []);
             this.searchQuery = '';
         },
         getDownloadLink(item) {
@@ -161,7 +167,7 @@ const AppOptions = {
         try {
             const [dataRes, dictRes] = await Promise.all([
                 fetch('../data/database.json'),
-                fetch('./Traditional-Simplefild/STCharacters.txt') // 只需要这一个
+                fetch('../Traditional-Simplefild/STCharacters.txt')
             ]);
 
             const dictText = await dictRes.text();
@@ -171,16 +177,14 @@ const AppOptions = {
             const ft = []; // 繁体库
 
             lines.forEach(line => {
-                // 1. 跳过注释行和空行
+                // 跳过注释行和空行
                 if (!line || line.startsWith('#')) return;
 
-                // 2. OpenCC 格式通常是: 简体 [Tab] 繁体1 繁体2
-                // 我们用正则匹配：第一个字是简体，后面剩下的全是繁体
                 const parts = line.trim().split(/\s+/);
                 if (parts.length < 2) return;
 
-                const sChar = parts[0]; // 第一个是简体
-                const tChars = parts.slice(1); // 后面全是对应的繁体
+                const sChar = parts[0];
+                const tChars = parts.slice(1);
 
                 tChars.forEach(tChar => {
                     if (tChar) {
@@ -196,8 +200,8 @@ const AppOptions = {
             const rawData = await dataRes.json();
             this.allData = Object.freeze(rawData);
 
-            console.log(`[OpenCC] 字典解析成功：已映射 ${fs.length} 个繁体字到简体`);
-            window.vApp = this; // 依然暴露实例方便你调试
+            console.log(`字典解析成功：已映射 ${fs.length} 个繁体字到简体`);
+            window.vApp = this;
         } catch (e) {
             console.error("❌ 字典加载失败:", e);
 

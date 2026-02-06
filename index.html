@@ -35,19 +35,42 @@
                 <archive-card v-for="item in pagedList" :key="item.id" :item="{ ...item, preview: getSafePath(item.preview) }" @open="detailItem = $event"></archive-card>
             </div>
 
-            <div v-if="totalPages > 1" class="mt-16 mb-32 flex flex-col items-center gap-4">
-                <div class="flex items-center gap-3">
-                    <button @click="setPage(currentPage - 1)" :disabled="currentPage === 1" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:bg-brand hover:text-white disabled:opacity-10 transition-all">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="3"/></svg>
-                    </button>
-                    <div class="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl focus-within:border-brand/50 transition-all">
-                        <input type="number" :value="currentPage" @keyup.enter="setPage($event.target.value)" @blur="setPage($event.target.value)" class="w-10 bg-transparent text-center text-sm font-bold text-brand outline-none">
-                        <span class="text-gray-600 text-xs">/</span>
-                        <span class="text-gray-400 text-sm font-medium pr-1">{{ totalPages }}</span>
+            <div v-if="fullFilteredList.length > 0" class="mt-16 mb-32 flex flex-col items-center gap-8">
+
+                <div class="flex items-center gap-4 group">
+                    <div class="h-px w-12 bg-gradient-to-r from-transparent to-white/10 transition-all group-hover:w-16 group-hover:to-brand/30"></div>
+
+                    <div class="flex flex-col items-center gap-1">
+                        <span class="text-[10px] text-gray-500 font-bold uppercase tracking-[0.3em]">Discovery</span>
+                        <div class="flex items-baseline gap-1.5">
+                            <span class="text-2xl font-black text-white leading-none tracking-tighter">{{ fullFilteredList.length }}</span>
+                            <span class="text-[10px] text-brand font-bold uppercase tracking-wider">Archives Found</span>
+                        </div>
                     </div>
-                    <button @click="setPage(currentPage + 1)" :disabled="currentPage === totalPages" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:bg-brand hover:text-white disabled:opacity-10 transition-all">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="3"/></svg>
-                    </button>
+
+                    <div class="h-px w-12 bg-gradient-to-l from-transparent to-white/10 transition-all group-hover:w-16 group-hover:to-brand/30"></div>
+                </div>
+
+                <div v-if="totalPages > 1" class="flex flex-col items-center gap-3">
+                    <div class="flex items-center gap-3">
+                        <button @click="setPage(currentPage - 1)" :disabled="currentPage === 1"
+                                class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:bg-brand hover:text-black hover:scale-110 active:scale-95 disabled:opacity-0 transition-all duration-300">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+
+                        <div class="flex items-center gap-3 px-4 py-2 bg-black/40 border border-white/5 rounded-2xl shadow-inner group focus-within:border-brand/30 transition-all">
+                            <input type="number" :value="currentPage" @keyup.enter="setPage($event.target.value)" @blur="setPage($event.target.value)"
+                                   class="w-8 bg-transparent text-center text-lg font-black text-brand outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                            <span class="text-white/10 font-light text-xl">/</span>
+                            <span class="text-gray-500 text-sm font-bold tracking-tighter">{{ totalPages }}</span>
+                        </div>
+
+                        <button @click="setPage(currentPage + 1)" :disabled="currentPage === totalPages"
+                                class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:bg-brand hover:text-black hover:scale-110 active:scale-95 disabled:opacity-0 transition-all duration-300">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                    </div>
+                    <span class="text-[9px] text-gray-700 font-bold uppercase tracking-[0.4em] ml-1">Navigate System</span>
                 </div>
             </div>
 
@@ -72,6 +95,7 @@
     </transition>
 </div>
 <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<!--特殊的占位卡片脚本 <script src="scripts/mock.js"></script> -->
 <script type="module" src="scripts/main.js"></script>
 </body>
 </html>

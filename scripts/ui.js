@@ -23,12 +23,28 @@ export const NavBar = {
 
 export const SideBar = {
     props: ['groups', 'selected', 'search', 'categories'],
-    data() { return { isOpen: false, expandedGroup: null } },
+    data() {
+        return {
+            isOpen: false,
+            expandedGroups: {}
+        }
+    },
+    methods: {
+        handleSubCatClick(cat, subCat, hasSubTags) {
+            if (hasSubTags) {
+                // 如果有子标签，切换展开状态并触发筛选
+                this.expandedGroups[subCat] = !this.expandedGroups[subCat];
+            }
+            // 无论是否有子标签，都触发筛选信号
+            this.$parent.toggleTag(cat, subCat);
+        }
+    },
     template: `
     <div class="shrink-0 flex text-[16px]">
         <div v-if="isOpen" @click="isOpen = false" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden"></div>
         <aside :class="isOpen ? 'translate-x-0' : '-translate-x-full'"
                class="fixed inset-y-0 left-0 z-50 w-72 bg-[#191919] p-5 flex flex-col border-r border-white/5 transition-transform duration-300 md:relative md:translate-x-0 h-full shrink-0 shadow-2xl md:shadow-none">
+            
             <div class="flex flex-col gap-3 mb-6 shrink-0">
                 <div class="relative">
                     <input :value="search" @input="$emit('update:search', $event.target.value)" 
@@ -36,43 +52,57 @@ export const SideBar = {
                            class="w-full bg-black/40 rounded-lg px-4 py-2.5 text-base border border-white/5 focus:border-brand outline-none transition text-white pr-10">
                     <button v-if="search" @click="$emit('update:search', '')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">✕</button>
                 </div>
-                <button v-if="search || Object.values(selected).some(v => v !== null)" 
-                        @click="$emit('reset')"
+                <button v-if="search || Object.values(selected).some(v => v && v.length > 0)" 
+                        @click="$emit('reset'); expandedGroups = {}"
                         class="w-full py-2 rounded-lg bg-brand/10 border border-brand/20 text-brand text-[13px] font-bold hover:bg-brand hover:text-white transition-all">
                     清除所有筛选
                 </button>
             </div>
+
             <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar flex flex-col gap-8">
                 <div v-for="cat in categories" :key="cat" class="flex flex-col gap-2">
                     <span class="text-[11px] text-gray-600 font-bold uppercase tracking-[0.2em] mb-1">{{ cat }}</span>
                     <div class="flex flex-col text-[14px]">
+                        
                         <template v-if="Array.isArray($parent.TAG_CONFIG[cat])">
                             <button v-for="tag in Array.from(groups[cat] || [])" 
                                     @click="$parent.toggleTag(cat, tag)"
-                                    :class="selected[cat] === tag ? 'text-brand font-bold bg-brand/5' : 'text-white/60 hover:text-white hover:bg-white/5'"
+                                    :class="selected[cat].includes(tag) ? 'text-brand font-bold bg-brand/5' : 'text-white/60 hover:text-white hover:bg-white/5'"
                                     class="text-left py-2 px-3 rounded-md transition-all flex items-center gap-3">
-                                <span class="w-1.5 h-1.5 rounded-full" :class="selected[cat] === tag ? 'bg-brand' : 'bg-white/10'"></span>
+                                <span class="w-1.5 h-1.5 rounded-full" :class="selected[cat].includes(tag) ? 'bg-brand' : 'bg-white/10'"></span>
                                 {{ tag }}
                             </button>
                         </template>
+
                         <template v-else-if="$parent.TAG_CONFIG[cat]">
-                            <div v-for="(subTags, subCat) in $parent.TAG_CONFIG[cat]" :key="subCat">
-                                <button @click="expandedGroup = (expandedGroup === subCat ? null : subCat)"
+                            <div v-for="(subTags, subCat) in $parent.TAG_CONFIG[cat]" :key="subCat" class="mb-1">
+                                <button @click="handleSubCatClick(cat, subCat, subTags && subTags.length > 0)"
+                                        :class="selected[cat].includes(subCat) ? 'bg-brand/10 border-l-2 border-brand text-brand' : 'text-white/80'"
                                         class="w-full text-left py-2 px-3 flex justify-between items-center group transition rounded-md hover:bg-white/5">
-                                    <span :class="expandedGroup === subCat ? 'text-brand font-bold' : 'text-white/80'">{{ subCat }}</span>
-                                    <span class="text-[10px] transition-transform duration-300" :class="{'rotate-180': expandedGroup === subCat}">▼</span>
+                                    <div class="flex items-center gap-3">
+                                        <span v-if="!subTags || subTags.length === 0" 
+                                              class="w-1.5 h-1.5 rounded-full" 
+                                              :class="selected[cat].includes(subCat) ? 'bg-brand' : 'bg-white/10'"></span>
+                                        <span class="font-medium">{{ subCat }}</span>
+                                    </div>
+                                    
+                                    <span v-if="subTags && subTags.length > 0" 
+                                          class="text-[10px] opacity-40 transition-transform duration-300" 
+                                          :class="{'rotate-180': expandedGroups[subCat]}">▼</span>
                                 </button>
-                                <div v-if="expandedGroup === subCat" class="flex flex-col gap-1 ml-4 mt-1 mb-2 border-l border-white/5">
+                                
+                                <div v-if="subTags && subTags.length > 0 && expandedGroups[subCat]" class="flex flex-col gap-1 ml-4 mt-1 mb-2 border-l border-white/5">
                                     <button v-for="tag in subTags" 
                                             v-show="groups[cat] && groups[cat].has(tag)"
                                             @click="$parent.toggleTag(cat, tag)"
-                                            :class="selected[cat] === tag ? 'text-brand font-bold bg-brand/5' : 'text-white/50 hover:text-white'"
+                                            :class="selected[cat].includes(tag) ? 'text-brand font-bold bg-brand/5' : 'text-white/50 hover:text-white'"
                                             class="text-left text-[13px] py-1.5 px-4 rounded transition-all">
                                         {{ tag }}
                                     </button>
                                 </div>
                             </div>
                         </template>
+
                     </div>
                 </div>
             </div>
