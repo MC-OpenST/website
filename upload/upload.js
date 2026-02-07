@@ -26,26 +26,37 @@ const UploadApp = {
     },
 
     async mounted() {
-        // 1. 检查本地存储
+        // 检查本地存储
         this.checkLoginExpiry();
 
-        // 2. 处理 OAuth 回调
+        // 处理 OAuth 回调
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
-        if (code) {
-            this.step = 2; // 显示“正在认证”状态
+
+        // 增加 step 状态判断，防止重复进入请求逻辑
+        if (code && this.step !== 2) {
+            this.step = 2; // 1. 立即进入“正在认证”锁定状态
+
+            // 先清空地址栏再发起请求，切断 Vue 重新渲染导致再次触发 mounted 的可能性
+            const cleanUrl = window.location.origin + window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+
             try {
+                // 这里的请求现在被保护了，不会被重复调用
                 const res = await fetch(`${WORKER_URL}/api/exchange-token?code=${code}`);
                 const data = await res.json();
+
                 if (data.access_token) {
                     this.saveAuth(data.access_token);
-                    const cleanUrl = window.location.origin + window.location.pathname;
-                    window.history.replaceState({}, document.title, cleanUrl);
+                } else if (data.error) {
+                    console.error("Token Exchange Error:", data.error_description || data.error);
                 }
             } catch (e) {
-                alert("GitHub 认证失败");
+                console.error("GitHub Auth Network Error:", e);
+                alert("GitHub 认证失败，请检查网络或稍后重试");
+            } finally {
+                this.step = 1; // 4. 处理完毕，解除锁定
             }
-            this.step = 1;
         }
     },
 
@@ -100,21 +111,22 @@ const UploadApp = {
             i > -1 ? this.form.tags.splice(i, 1) : this.form.tags.push(tag);
         },
         async handleUpload() {
-            if (!this.userToken) return;
-            this.step = 2;
+            if (!this.userToken || this.step === 2) return;
+
+            this.step = 2; // 进入上传中状态
             try {
                 const zip = new JSZip();
 
-                // 1. 清洗文件夹名称，并作为 info.json 的 folder 字段
+                // 1. 清洗文件夹名称 (确保 info.json 的格式完全符合示例)
                 const safeFolderName = this.form.name.replace(/[#\\/:*?"<>|]/g, '_');
                 const folder = zip.folder(safeFolderName);
 
-                // 2. 预览图处理
                 const previewExt = this.form.previewFile.name.split('.').pop().toLowerCase();
                 const previewFileName = `preview.${previewExt}`;
                 const now = new Date();
+                const originalFileName = this.form.litematicFile.name;
 
-                // 3. 标准格式修正
+                // 2. 标准格式 info.json (已对齐示例格式)
                 const infoJson = {
                     "id": `sub-${now.getTime()}`,
                     "name": this.form.name,
@@ -123,30 +135,29 @@ const UploadApp = {
                     "description": this.form.desc,
                     "folder": safeFolderName,
                     "preview": previewFileName,
-                    "filename": this.form.litematicFile.name,
+                    "filename": originalFileName,
                     "submitDate": now.toISOString()
                 };
 
-                // 4. 构建 ZIP 结构
                 folder.file("info.json", JSON.stringify(infoJson, null, 4));
                 folder.file(previewFileName, this.form.previewFile);
-                folder.file(this.form.litematicFile.name, this.form.litematicFile);
+                folder.file(originalFileName, this.form.litematicFile);
 
-                // 导出 ZIP
                 const zipBlob = await zip.generateAsync({ type: "blob" });
 
-                // 5. 上传至 Worker 中继
+                // 3. Worker 中继上传
                 const fd = new FormData();
                 fd.append('name', this.form.name);
-                fd.append('zip', zipBlob, `submission_${safeFolderName}.zip`); // 传输用的压缩包名
+                fd.append('zip', zipBlob, `submission_${safeFolderName}.zip`);
                 fd.append('preview', this.form.previewFile);
 
                 const workerRes = await fetch(WORKER_URL, { method: 'POST', body: fd });
                 if (!workerRes.ok) throw new Error('Worker 文件中继失败');
+
                 const { filePath } = await workerRes.json();
                 const domesticDownloadUrl = `${WORKER_URL}/dl/${filePath}`;
 
-                // 6. 构造 GitHub Issue 内容
+                // 4. GitHub Issue 内容
                 const issueBody = `## 🚀 机器投递: ${this.form.name}
 
 > [!IMPORTANT]
@@ -166,7 +177,6 @@ ${this.form.desc}
 
 _Generated by OpenST Portal 4.0_`;
 
-                // 7. 发送至 GitHub API
                 const ghRes = await fetch(`https://api.github.com/repos/${GH_REPO}/issues`, {
                     method: 'POST',
                     headers: {
@@ -182,11 +192,11 @@ _Generated by OpenST Portal 4.0_`;
                 if (!ghRes.ok) throw new Error('GitHub 提交失败');
                 const ghData = await ghRes.json();
                 this.githubIssueUrl = ghData.html_url;
-                this.step = 3;
+                this.step = 3; // 进入成功状态
             } catch (e) {
                 console.error(e);
                 alert("投递失败: " + e.message);
-                this.step = 1;
+                this.step = 1; // 报错则回退，允许重试
             }
         }
     },
