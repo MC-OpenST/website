@@ -174,7 +174,7 @@ export const DetailModal = {
         // 复制直链并调用主程序的反馈逻辑
         copyPermalink(subId) {
             if (!subId) return;
-            const url = `${window.location.origin}/openst4.0/index.html?${subId}`;
+            const url = `${window.location.origin}/index.html?${subId}`;
             navigator.clipboard.writeText(url).then(() => {
                 // 调用 main.js 中的提示方法
                 if (this.$root.handleCopyID) {
