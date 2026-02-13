@@ -97,7 +97,7 @@ const UploadApp = {
             localStorage.removeItem('gh_auth');
         },
         loginWithGitHub() {
-            const CLIENT_ID = 'Ov23liqOpAQzFOfd68db'
+            const CLIENT_ID = 'Ov23liTildfj3XAkvbr8'
             const redirect_uri = window.location.origin + window.location.pathname; // 指向 upload.html
 
             window.location.href = `https://github.com/login/oauth/authorize` +

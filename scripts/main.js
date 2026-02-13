@@ -150,7 +150,7 @@ const AppOptions = {
 
         // 身份验证逻辑
         async handleLogin() {
-            const CLIENT_ID = 'Ov23liqOpAQzFOfd68db';
+            const CLIENT_ID = 'Ov23liTildfj3XAkvbr8';
             const redirect_uri = window.location.origin + window.location.pathname;
             window.location.href = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=repo&redirect_uri=${encodeURIComponent(redirect_uri)}`;
         },
