@@ -12,7 +12,7 @@ export const NavBar = {
                 </svg>
             </button>
             <div class="font-bold tracking-tighter text-brand text-xl">
-                MC-OPENST <span class="hidden sm:inline text-white/40 text-xs tracking-normal ml-1 font-normal uppercase">v5.0</span>
+                MC-OPENST <span class="hidden sm:inline text-white/40 text-xs tracking-normal ml-1 font-normal uppercase">v4.0</span>
             </div>
         </div>
 
@@ -165,11 +165,24 @@ export const DetailModal = {
             return marked.parse(this.item.description, { breaks: true, gfm: true });
         }
     },
-    methods: { // 图片放大
+    methods: {
         handleMdClick(e) {
             if (e.target.tagName === 'IMG') {
                 this.$root.handleImageZoom(e);
             }
+        },
+        // 复制直链并调用主程序的反馈逻辑
+        copyPermalink(subId) {
+            if (!subId) return;
+            const url = `${window.location.origin}/openst4.0/index.html?${subId}`;
+            navigator.clipboard.writeText(url).then(() => {
+                // 调用 main.js 中的提示方法
+                if (this.$root.handleCopyID) {
+                    this.$root.handleCopyID(subId);
+                } else {
+                    return"";
+                }
+            });
         }
     },
     template: `
@@ -180,10 +193,7 @@ export const DetailModal = {
             <div v-if="isAdmin" class="absolute top-6 left-6 z-30 flex gap-2">
                 <button @click="$emit('edit', item)" class="bg-brand/20 hover:bg-brand text-brand hover:text-black px-4 py-2 rounded-full text-xs font-bold transition-all border border-brand/20 backdrop-blur-md flex items-center gap-2">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-width="2"/></svg>
-                    编辑作品信息
-                </button>
-                <button @click="$emit('delete', item)" class="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-4 py-2 rounded-full text-xs font-bold transition-all border border-red-500/20 backdrop-blur-md">
-                    下架
+                    编辑稿件
                 </button>
             </div>
 
@@ -193,18 +203,26 @@ export const DetailModal = {
 
             <div class="flex flex-col md:flex-row w-full overflow-y-auto md:overflow-visible">
                 <div class="w-full md:w-3/5 bg-black/20 flex items-center justify-center border-b md:border-b-0 md:border-r border-white/5 p-4 md:p-10 md:sticky md:top-0 h-auto md:h-[90vh]">
-                  <img :src="item.preview"
-                       @click.stop="$root.handleImageZoom($event)"
-                       class="w-full h-auto md:max-h-full object-contain rounded-xl shadow-2xl cursor-zoom-in">
+                  <img :src="item.preview" @click.stop="$root.handleImageZoom($event)" class="w-full h-auto md:max-h-full object-contain rounded-xl shadow-2xl cursor-zoom-in">
                 </div>
 
                 <div class="w-full md:w-2/5 p-8 md:p-10 flex flex-col gap-8 bg-[#1a1a1a] md:overflow-y-auto md:h-[90vh] custom-scrollbar text-gray-400">
                     <div>
                         <div class="text-brand text-xs font-bold tracking-[0.2em] uppercase mb-2">Archive Detail</div>
                         <h2 class="text-3xl font-bold text-white leading-tight">{{ item.name }}</h2>
-                        <div class="flex items-center gap-2 mt-3">
-                             <p class="text-lg">by {{ item.author }}</p>
-                             <span class="text-[10px] bg-white/5 px-2 py-0.5 rounded text-gray-600 font-mono">ID: {{ item.folder }}</span>
+                        
+                        <div class="flex flex-col gap-3 mt-4">
+                             <p class="text-lg text-gray-200">by {{ item.author }}</p>
+                             
+                             <div @click="copyPermalink(item.sub_id)" 
+                                  class="group self-start flex items-center gap-2 bg-white/5 hover:bg-brand/10 border border-white/5 hover:border-brand/30 px-3 py-1.5 rounded-xl cursor-pointer transition-all active:scale-95"
+                                  title="点击复制直链">
+                                 <span class="text-[10px] text-gray-500 font-mono tracking-tighter uppercase">ID:</span>
+                                 <span class="text-xs font-mono text-gray-400 group-hover:text-brand transition-colors">{{ item.sub_id }}</span>
+                                 <svg class="w-3 h-3 text-gray-600 group-hover:text-brand transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                 </svg>
+                             </div>
                         </div>
                     </div>
 
@@ -213,16 +231,21 @@ export const DetailModal = {
                     </div>
 
                     <div class="flex-1">
-                        <h4 class="text-[10px] text-[#40B5AD] font-bold mb-3 uppercase tracking-widest opacity-80">Description</h4>
+                        <h4 class="text-[10px] text-brand font-bold mb-3 uppercase tracking-widest opacity-80">Description</h4>
                         <div class="markdown-body" @click="handleMdClick">
                             <div v-html="renderedDescription"></div>
                         </div>
                     </div>
 
                     <div class="pt-6 pb-10 mt-auto">
-                        <a :href="item.downloadLink || $parent.getDownloadLink(item)" class="bg-[#40B5AD] hover:brightness-110 text-black text-center py-4 rounded-2xl text-lg font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.97] shadow-xl shadow-brand/20">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            下载资源文件
+                        <a :href="item.downloadLink || $parent.getDownloadLink(item)" class="bg-brand hover:brightness-110 text-black text-center py-4 rounded-2xl text-lg font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.97] shadow-xl shadow-brand/20">
+                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                  stroke-width="2.5"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"/>
+                          </svg>
+                            下载文件
                         </a>
                     </div>
                 </div>

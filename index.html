@@ -15,7 +15,15 @@
 </head>
 <body class="bg-dark text-white overflow-hidden font-sans">
 <div id="app" v-cloak class="flex flex-col h-screen h-[100dvh] overflow-hidden" @click="handleImageZoom">
-    <nav-bar v-model:proxy="useProxy" @open-menu="$refs.sidebar.isOpen = true"></nav-bar>
+
+    <nav-bar
+            v-model:proxy="useProxy"
+            :user="user"
+            :is-admin="isAdmin"
+            @login="handleLogin"
+            @logout="handleLogout"
+            @open-menu="$refs.sidebar.isOpen = true">
+    </nav-bar>
 
     <div class="flex flex-1 overflow-hidden relative">
         <side-bar ref="sidebar" :categories="categories" :groups="dynamicTagGroups" :selected="selectedTags" v-model:search="searchQuery" @reset="resetFilters"></side-bar>
@@ -27,19 +35,25 @@
                         <div class="w-16 h-16 rounded-2xl bg-brand/10 flex items-center justify-center text-3xl group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">🚀</div>
                         <div class="text-center lg:text-left xl:text-center">
                             <h3 class="text-lg font-bold text-white tracking-tight">贡献你的机器</h3>
-                            <p class="text-xs text-gray-500 mt-2 leading-relaxed">欢迎分享你的红石科技<br>点击前往投递系统</p>
+                            <p class="text-xs text-gray-500 mt-2 leading-relaxed">欢迎分享你的作品<br>点击前往投递系统</p>
                         </div>
                     </div>
                 </a>
 
-                <archive-card v-for="item in pagedList" :key="item.id" :item="{ ...item, preview: getSafePath(item.preview) }" @open="detailItem = $event"></archive-card>
+                <archive-card
+                        v-for="item in pagedList"
+                        :key="item.id"
+                        :is-admin="isAdmin"
+                        :item="{ ...item, preview: getSafePath(item.preview) }"
+                        @open="detailItem = $event"
+                        @edit="openEdit">
+                </archive-card>
             </div>
 
             <div v-if="fullFilteredList.length > 0" class="mt-16 mb-32 flex flex-col items-center gap-8">
 
                 <div class="flex items-center gap-4 group">
                     <div class="h-px w-12 bg-gradient-to-r from-transparent to-white/10 transition-all group-hover:w-16 group-hover:to-brand/30"></div>
-
                     <div class="flex flex-col items-center gap-1">
                         <span class="text-[10px] text-gray-500 font-bold uppercase tracking-[0.3em]">Discovery</span>
                         <div class="flex items-baseline gap-1.5">
@@ -47,7 +61,6 @@
                             <span class="text-[10px] text-brand font-bold uppercase tracking-wider">Archives Found</span>
                         </div>
                     </div>
-
                     <div class="h-px w-12 bg-gradient-to-l from-transparent to-white/10 transition-all group-hover:w-16 group-hover:to-brand/30"></div>
                 </div>
 
@@ -71,12 +84,6 @@
                         </button>
                     </div>
                     <span class="text-[9px] text-gray-700 font-bold uppercase tracking-[0.4em] ml-1">Navigate System</span>
-                    <nav-bar
-                            :user="user"
-                            :is-admin="isAdmin"
-                            @login="handleLogin"
-                            @logout="handleLogout"
-                    ></nav-bar>
                 </div>
             </div>
 
@@ -84,7 +91,7 @@
         </main>
     </div>
 
-    <detail-modal v-if="detailItem" :item="detailItem" @close="detailItem = null"></detail-modal>
+    <detail-modal v-if="detailItem" :item="detailItem" :is-admin="isAdmin" @close="detailItem = null" @edit="openEdit"></detail-modal>
 
     <transition name="fade">
         <div v-if="zoomImage" class="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl cursor-zoom-out" @click.stop="closeZoom">
@@ -99,9 +106,11 @@
             </div>
         </div>
     </transition>
+
 </div>
+
 <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-<!--特殊的占位卡片脚本 <script src="scripts/mock.js"></script> -->
+<!--<script src="scripts/mock.js"></script>-->
 <script type="module" src="scripts/main.js"></script>
 </body>
 </html>

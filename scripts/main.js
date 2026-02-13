@@ -4,7 +4,7 @@ import { TAG_CONFIG, CATEGORIES } from './config.js';
 import { PortalAuth } from './auth.js';
 
 const { createApp } = Vue;
-const WORKER_URL = 'openstsubmission.linvin.net';
+const WORKER_URL = 'https://openstsubmission.linvin.net';
 
 // 懒加载指令
 const lazyDirective = {
@@ -35,7 +35,7 @@ const lazyDirective = {
     unmounted(el) { el._observer?.disconnect(); }
 };
 
-// --- 🚀 App 主逻辑 ---
+// App 主逻辑
 const AppOptions = {
     components: {
         'nav-bar': UI.NavBar,
@@ -48,13 +48,8 @@ const AppOptions = {
         CATEGORIES.forEach(cat => { initialSelected[cat] = []; });
 
         return {
-            // [权限相关]
             user: null,
             isAdmin: false,
-            isEditing: false,
-            editForm: null,
-
-            // [数据相关]
             allData: [],
             dictSArray: [],
             dictTArray: [],
@@ -72,7 +67,12 @@ const AppOptions = {
     computed: {
         normalizedSearch() { return this.normalize(this.searchQuery); },
         fullFilteredList() {
-            return Logic.getFilteredList(this.allData, this.normalizedSearch, this.selectedTags, this.normalize);
+            return Logic.getFilteredList(
+                this.allData,
+                this.searchQuery, // 传入原始搜索词
+                this.selectedTags,
+                this.normalize // 传入繁简转换函数
+            );
         },
         totalPages() { return Math.ceil(this.fullFilteredList.length / this.pageSize) || 1; },
         pagedList() {
@@ -88,15 +88,71 @@ const AppOptions = {
         searchQuery() { this.currentPage = 1; }
     },
     methods: {
-        // 身份管理
-        async handleLogin() {
-            const CLIENT_ID = 'Ov23liTildfj3XAkvbr8';
-            window.location.href = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=public_repo`;
+        // URL 参数定位逻辑 (?sub-xxx)
+        checkUrlLocation() {
+            const queryString = window.location.search.replace('?', '');
+            if (queryString && queryString.startsWith('sub-')) {
+                const target = this.allData.find(item => item.sub_id === queryString);
+                if (target) {
+                    this.detailItem = target;
+                }
+            }
         },
-        handleLogout() {
-            PortalAuth.logout();
-            this.user = null;
-            this.isAdmin = false;
+
+        // 繁简转换逻辑
+        normalize(str) {
+            if (!str) return '';
+            const inputChars = Array.from(str.toLowerCase().trim());
+            if (this.dictSArray.length === 0) return str.toLowerCase().trim();
+            return inputChars.map(char => {
+                const idx = this.dictTArray.indexOf(char);
+                return (idx > -1) ? this.dictSArray[idx] : char;
+            }).join('');
+        },
+
+        // 路径安全转义 (处理中文/空格文件夹)
+        getSafePath(path) {
+            if (!path) return '';
+            return path.split('/').map(segment => encodeURIComponent(segment)).join('/');
+        },
+
+        // 下载链接生成
+        getDownloadLink(item) {
+            if (!item) return '';
+            const safePath = this.getSafePath(`archive/${item.id}/${item.filename}`);
+            const raw = `https://raw.githubusercontent.com/MC-OpenST/website/main/${safePath}`;
+            return this.useProxy ? `https://ghfast.top/${raw}` : raw;
+        },
+
+        // 编辑跳转逻辑
+        openEdit(item) {
+            if (!item || !item.id) return;
+            const folder = item.id.trim();
+            // 确保跳转到 admin_tools 目录下的编辑器
+            window.location.href = `./admin_tools/admin_edit.html?folder=${encodeURIComponent(folder)}`;
+        },
+
+        // 详情页控制
+        openDetail(item) {
+            this.detailItem = item;
+            if (item && item.sub_id) {
+                window.history.replaceState(null, '', `?${item.sub_id}`);
+            }
+        },
+        closeDetail() {
+            this.detailItem = null;
+            window.history.replaceState(null, '', window.location.pathname);
+        },
+
+        handleCopyID(subId) {
+            console.log("Archive ID copied:", subId);
+        },
+
+        // 身份验证逻辑
+        async handleLogin() {
+            const CLIENT_ID = 'Ov23liqOpAQzFOfd68db';
+            const redirect_uri = window.location.origin + window.location.pathname;
+            window.location.href = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=repo&redirect_uri=${encodeURIComponent(redirect_uri)}`;
         },
         async checkIdentity() {
             const auth = PortalAuth.get();
@@ -111,62 +167,19 @@ const AppOptions = {
             } catch (e) { console.error("Admin check failed", e); }
         },
 
-        // 管理操作
-        openEdit(item) {
-            this.editForm = JSON.parse(JSON.stringify(item));
-            this.isEditing = true;
-            this.detailItem = null;
-        },
-        async saveEdit() {
-            const auth = PortalAuth.get();
-            if (!auth || !this.isAdmin) return;
-            try {
-                const res = await fetch(`${WORKER_URL}/api/admin/update-info`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        token: auth.token,
-                        folder: this.editForm.folder,
-                        newInfo: this.editForm
-                    })
-                });
-                if (res.ok) {
-                    alert("保存成功！");
-                    this.isEditing = false;
-                    // 局部刷新本地数据
-                    const idx = this.allData.findIndex(i => i.folder === this.editForm.folder);
-                    if (idx > -1) this.allData[idx] = this.editForm;
-                }
-            } catch (e) { alert("保存失败: " + e.message); }
-        },
-
-        // --- 🛠️ 基础功能 (保持原有) ---
-        setPage(p) {
-            const pageIdx = parseInt(p);
-            if (!isNaN(pageIdx) && pageIdx >= 1 && pageIdx <= this.totalPages) {
-                this.currentPage = pageIdx;
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-        },
-        normalize(str) {
-            if (!str) return '';
-            const inputChars = Array.from(str.toLowerCase().trim());
-            if (this.dictSArray.length === 0) return str.toLowerCase().trim();
-            return inputChars.map(char => {
-                const idx = this.dictTArray.indexOf(char);
-                return (idx > -1) ? this.dictSArray[idx] : char;
-            }).join('');
-        },
+        // UI 交互方法
         toggleTag(cat, tag) {
             const list = this.selectedTags[cat];
             const index = list.indexOf(tag);
             if (index > -1) list.splice(index, 1);
             else list.push(tag);
         },
-        getDownloadLink(item) {
-            if (!item) return '';
-            const raw = `https://raw.githubusercontent.com/MC-OpenST/website/main/archive/${item.id}/${item.filename}`;
-            return this.useProxy ? `https://ghfast.top/${raw}` : raw;
+        setPage(p) {
+            const pageIdx = parseInt(p);
+            if (!isNaN(pageIdx) && pageIdx >= 1 && pageIdx <= this.totalPages) {
+                this.currentPage = pageIdx;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         },
         handleImageZoom(e) {
             const target = e.target || e;
@@ -176,8 +189,9 @@ const AppOptions = {
         },
         closeZoom() { this.zoomImage = null; document.body.style.overflow = ''; }
     },
+
     async mounted() {
-        // 1. 处理 OAuth 回调
+        // 1. 处理登录回调
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         if (code) {
@@ -192,14 +206,14 @@ const AppOptions = {
         // 2. 身份校验
         await this.checkIdentity();
 
-        // 3. 加载核心数据
+        // 3. 数据并行加载
         try {
             const [dataRes, dictRes] = await Promise.all([
-                fetch('../data/database.json'),
-                fetch('../Traditional-Simplefild/STCharacters.txt')
+                fetch('./data/database.json'),
+                fetch('./Traditional-Simplefild/STCharacters.txt')
             ]);
 
-            // 解析字典
+            // 解析字典 (繁简搜索回归)
             const dictText = await dictRes.text();
             const fs = [], ft = [];
             dictText.split(/\r?\n/).forEach(line => {
@@ -210,9 +224,13 @@ const AppOptions = {
             this.dictSArray = Object.freeze(fs);
             this.dictTArray = Object.freeze(ft);
 
-            // 加载主库
+            // 装载数据库
             const rawData = await dataRes.json();
             this.allData = Object.freeze(rawData);
+
+            // 数据准备好后，立即检测 URL 定位
+            this.checkUrlLocation();
+
         } catch (e) { console.error("Data Load Error", e); }
     }
 };
