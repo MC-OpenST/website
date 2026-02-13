@@ -71,6 +71,12 @@
                         </button>
                     </div>
                     <span class="text-[9px] text-gray-700 font-bold uppercase tracking-[0.4em] ml-1">Navigate System</span>
+                    <nav-bar
+                            :user="user"
+                            :is-admin="isAdmin"
+                            @login="handleLogin"
+                            @logout="handleLogout"
+                    ></nav-bar>
                 </div>
             </div>
 

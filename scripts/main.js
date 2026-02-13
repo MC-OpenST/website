@@ -1,48 +1,41 @@
 import * as Logic from './logic.js';
 import * as UI from './ui.js';
 import { TAG_CONFIG, CATEGORIES } from './config.js';
+import { PortalAuth } from './auth.js';
 
 const { createApp } = Vue;
+const WORKER_URL = 'openstsubmission.linvin.net';
 
+// 懒加载指令
 const lazyDirective = {
     mounted(el, binding) {
         el.dataset.src = binding.value;
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    // 进场：加载位图
-                    if (el.dataset.src) {
-                        el.src = el.dataset.src;
-                        el.style.opacity = "1";
-                        el.decoding = "async";
-                    }
-                } else {
-                    // 离场：卸载位图，释放这部分 85MB 里的波动内存
-                    if (el.src && el.src !== window.location.href) {
-                        el.dataset.src = el.src;
-                        el.src = "";
-                        el.style.opacity = "0";
-                    }
+                if (entry.isIntersecting && el.dataset.src) {
+                    el.src = el.dataset.src;
+                    el.style.opacity = "1";
+                    el.decoding = "async";
+                } else if (!entry.isIntersecting && el.src && el.src !== window.location.href) {
+                    el.dataset.src = el.src;
+                    el.src = "";
+                    el.style.opacity = "0";
                 }
             });
         }, { rootMargin: '300px', threshold: 0 });
-
         observer.observe(el);
         el._observer = observer;
     },
     updated(el, binding) {
-        // 当翻页或搜索导致图片 URL 变化时重置
         if (binding.value !== binding.oldValue) {
             el.dataset.src = binding.value;
             if (el.src) el.src = binding.value;
         }
     },
-    unmounted(el) {
-        // 销毁时彻底断开监听，防止内存泄露
-        el._observer?.disconnect();
-    }
+    unmounted(el) { el._observer?.disconnect(); }
 };
 
+// --- 🚀 App 主逻辑 ---
 const AppOptions = {
     components: {
         'nav-bar': UI.NavBar,
@@ -52,10 +45,16 @@ const AppOptions = {
     },
     data() {
         const initialSelected = {};
-        // 1. 修改点：初始化为数组 [] 支持多项激活
         CATEGORIES.forEach(cat => { initialSelected[cat] = []; });
 
         return {
+            // [权限相关]
+            user: null,
+            isAdmin: false,
+            isEditing: false,
+            editForm: null,
+
+            // [数据相关]
             allData: [],
             dictSArray: [],
             dictTArray: [],
@@ -71,43 +70,78 @@ const AppOptions = {
         }
     },
     computed: {
-        // 繁简转换后的搜索词（缓存）
-        normalizedSearch() {
-            return this.normalize(this.searchQuery);
-        },
-        // 过滤后的全量数据
+        normalizedSearch() { return this.normalize(this.searchQuery); },
         fullFilteredList() {
-            return Logic.getFilteredList(
-                this.allData,
-                this.normalizedSearch,
-                this.selectedTags,
-                this.normalize
-            );
+            return Logic.getFilteredList(this.allData, this.normalizedSearch, this.selectedTags, this.normalize);
         },
-
-        // 总页数计算
-        totalPages() {
-            return Math.ceil(this.fullFilteredList.length / this.pageSize) || 1;
-        },
-        // 切片渲染列表（只给 Vue 渲染这 12 个 DOM）
+        totalPages() { return Math.ceil(this.fullFilteredList.length / this.pageSize) || 1; },
         pagedList() {
             const start = (this.currentPage - 1) * this.pageSize;
-            const end = start + this.pageSize;
-            return this.fullFilteredList.slice(start, end);
+            return this.fullFilteredList.slice(start, start + this.pageSize);
         },
         dynamicTagGroups() {
             return Logic.calculateDynamicTags(this.allData, this.categories, this.selectedTags);
         }
     },
     watch: {
-        // 状态变动重置页码
         selectedTags: { deep: true, handler() { this.currentPage = 1; } },
         searchQuery() { this.currentPage = 1; }
     },
     methods: {
-        // 跳转翻页
+        // 身份管理
+        async handleLogin() {
+            const CLIENT_ID = 'Ov23liTildfj3XAkvbr8';
+            window.location.href = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=public_repo`;
+        },
+        handleLogout() {
+            PortalAuth.logout();
+            this.user = null;
+            this.isAdmin = false;
+        },
+        async checkIdentity() {
+            const auth = PortalAuth.get();
+            if (!auth) return;
+            this.user = auth.user;
+            try {
+                const res = await fetch(`${WORKER_URL}/api/check-admin`, {
+                    headers: { 'Authorization': `Bearer ${auth.token}` }
+                });
+                const data = await res.json();
+                this.isAdmin = data.isAdmin;
+            } catch (e) { console.error("Admin check failed", e); }
+        },
+
+        // 管理操作
+        openEdit(item) {
+            this.editForm = JSON.parse(JSON.stringify(item));
+            this.isEditing = true;
+            this.detailItem = null;
+        },
+        async saveEdit() {
+            const auth = PortalAuth.get();
+            if (!auth || !this.isAdmin) return;
+            try {
+                const res = await fetch(`${WORKER_URL}/api/admin/update-info`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token: auth.token,
+                        folder: this.editForm.folder,
+                        newInfo: this.editForm
+                    })
+                });
+                if (res.ok) {
+                    alert("保存成功！");
+                    this.isEditing = false;
+                    // 局部刷新本地数据
+                    const idx = this.allData.findIndex(i => i.folder === this.editForm.folder);
+                    if (idx > -1) this.allData[idx] = this.editForm;
+                }
+            } catch (e) { alert("保存失败: " + e.message); }
+        },
+
+        // --- 🛠️ 基础功能 (保持原有) ---
         setPage(p) {
-            // 转换为数字并限制范围
             const pageIdx = parseInt(p);
             if (!isNaN(pageIdx) && pageIdx >= 1 && pageIdx <= this.totalPages) {
                 this.currentPage = pageIdx;
@@ -126,100 +160,63 @@ const AppOptions = {
         toggleTag(cat, tag) {
             const list = this.selectedTags[cat];
             const index = list.indexOf(tag);
-            if (index > -1) {
-                list.splice(index, 1);
-            } else {
-                list.push(tag);
-            }
-        },
-        resetFilters() {
-            this.categories.forEach(c => this.selectedTags[c] = []);
-            this.searchQuery = '';
+            if (index > -1) list.splice(index, 1);
+            else list.push(tag);
         },
         getDownloadLink(item) {
             if (!item) return '';
             const raw = `https://raw.githubusercontent.com/MC-OpenST/website/main/archive/${item.id}/${item.filename}`;
             return this.useProxy ? `https://ghfast.top/${raw}` : raw;
         },
-        getSafePath(rawPath) {
-            if (!rawPath) return '';
-            return rawPath.split('/')
-                .map(segment => encodeURIComponent(segment))
-                .join('/');
-        },
-        // 全局图片捕获
         handleImageZoom(e) {
             const target = e.target || e;
             if (target.tagName !== 'IMG') return;
-
-            this.zoomImage = {
-                url: target.src,
-                name: decodeURIComponent(target.alt || target.src.split('/').pop().split('?')[0])
-            };
+            this.zoomImage = { url: target.src, name: "Preview" };
             document.body.style.overflow = 'hidden';
         },
-        closeZoom() {
-            this.zoomImage = null;
-            document.body.style.overflow = '';
-        },
+        closeZoom() { this.zoomImage = null; document.body.style.overflow = ''; }
     },
     async mounted() {
+        // 1. 处理 OAuth 回调
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        if (code) {
+            const res = await fetch(`${WORKER_URL}/api/exchange-token?code=${code}`);
+            const data = await res.json();
+            if (data.access_token) {
+                PortalAuth.save(data);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+
+        // 2. 身份校验
+        await this.checkIdentity();
+
+        // 3. 加载核心数据
         try {
             const [dataRes, dictRes] = await Promise.all([
                 fetch('../data/database.json'),
                 fetch('../Traditional-Simplefild/STCharacters.txt')
             ]);
 
+            // 解析字典
             const dictText = await dictRes.text();
-            const lines = dictText.split(/\r?\n/);
-
-            const fs = []; // 简体库
-            const ft = []; // 繁体库
-
-            lines.forEach(line => {
-                // 跳过注释行和空行
+            const fs = [], ft = [];
+            dictText.split(/\r?\n/).forEach(line => {
                 if (!line || line.startsWith('#')) return;
-
                 const parts = line.trim().split(/\s+/);
-                if (parts.length < 2) return;
-
-                const sChar = parts[0];
-                const tChars = parts.slice(1);
-
-                tChars.forEach(tChar => {
-                    if (tChar) {
-                        fs.push(sChar);
-                        ft.push(tChar);
-                    }
-                });
+                if (parts.length >= 2) parts.slice(1).forEach(t => { fs.push(parts[0]); ft.push(t); });
             });
-
             this.dictSArray = Object.freeze(fs);
             this.dictTArray = Object.freeze(ft);
 
+            // 加载主库
             const rawData = await dataRes.json();
             this.allData = Object.freeze(rawData);
-
-            console.log(`字典解析成功：已映射 ${fs.length} 个繁体字到简体`);
-            window.vApp = this;
-        } catch (e) {
-            console.error("❌ 字典加载失败:", e);
-
-            // 2. 先冻结并同步字典
-            this.dictSArray = Object.freeze(fs);
-            this.dictTArray = Object.freeze(ft);
-
-            // 3. 最后加载主数据
-            // 当 allData 被赋值时，normalizedSearch 计算属性已经可以正确利用字典了
-            const rawData = await dataRes.json();
-            this.allData = Object.freeze(rawData);
-
-            console.log(`[System] 字典就绪 (${fs.length} 字符), 数据已冻结.`);
-        }
+        } catch (e) { console.error("Data Load Error", e); }
     }
 };
 
-// 正确启动流程
 const app = createApp(AppOptions);
 app.directive('lazy', lazyDirective);
 app.mount('#app');
