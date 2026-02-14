@@ -98,6 +98,26 @@ const AppOptions = {
                 }
             }
         },
+        resetFilters() {
+            // 1. 清空搜索内容
+            this.searchQuery = '';
+
+            // 2. 将所有分类的已选标签数组重置为空
+            this.categories.forEach(cat => {
+                this.selectedTags[cat] = [];
+            });
+
+            // 3. 回归第一页并同步 URL 状态
+            this.currentPage = 1;
+            if (window.location.search) {
+                window.history.replaceState(null, '', window.location.pathname);
+            }
+
+            // 4. (可选) 如果侧边栏有引用，也可以在重置后自动收起
+            if (this.$refs.sidebar) {
+                this.$refs.sidebar.isOpen = false;
+            }
+        },
 
         // 繁简转换逻辑
         normalize(str) {
