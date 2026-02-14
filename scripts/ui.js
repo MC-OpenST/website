@@ -241,7 +241,7 @@ export const DetailModal = {
                                 </div>
                                 <div class="flex flex-col">
                                     <span class="text-xs font-bold text-gray-200">GitHub 下载加速</span>
-                                    <span class="text-[10px] text-gray-500 font-medium">如果下载速度满请开启</span>
+                                    <span class="text-[10px] text-gray-500 font-medium">如果下载速度慢请开启</span>
                                 </div>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
