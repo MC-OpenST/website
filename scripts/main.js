@@ -164,7 +164,7 @@ const AppOptions = {
         // 详情页关闭：还原 URL
         closeDetail() {
             this.detailItem = null;
-            // 彻底移除查询参数，恢复到 example.com/index.html
+            // 彻底移除查询参数，恢复到 example.com/archive.html
             window.history.pushState({}, '', window.location.pathname);
         },
 

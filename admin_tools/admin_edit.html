@@ -48,7 +48,7 @@
             <p class="text-white/30 text-sm mt-2 font-mono">Archive: {{ editForm.id }}</p>
         </div>
         <div class="flex gap-4">
-            <a href="../index.html" class="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition-all text-sm border border-white/10">放弃返回</a>
+            <a href="../archive.html" class="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition-all text-sm border border-white/10">放弃返回</a>
             <button @click="submitSave" :disabled="isSaving"
                     class="px-8 py-2.5 rounded-xl bg-[--brand] text-black font-extrabold hover:scale-105 active:scale-95 transition-all shadow-lg shadow-[#40B5AD]/20 disabled:opacity-50">
                 {{ isSaving ? '同步中...' : '提交修改' }}
@@ -212,7 +212,7 @@
 
                     if (res.ok) {
                         alert("✅ 修改成功！");
-                        window.location.href = '../index.html';
+                        window.location.href = '../archive.html';
                     } else {
                         const err = await res.json();
                         alert("❌ 提交失败: " + (err.error || "Worker 拒绝了请求"));

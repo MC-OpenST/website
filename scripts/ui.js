@@ -170,7 +170,7 @@ export const DetailModal = {
         },
         copyPermalink(subId) {
             if (!subId) return;
-            const url = `${window.location.origin}/index.html?${subId}`;
+            const url = `${window.location.origin}/archive.html?${subId}`;
             navigator.clipboard.writeText(url).then(() => {
                 // 调用 main.js 中的提示方法（如弹窗通知）
                 if (this.$root.handleCopyID) {

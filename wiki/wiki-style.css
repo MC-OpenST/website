@@ -1,0 +1,30 @@
+/* 彻底隐藏 Docsify 原生 UI 元素 */
+.sidebar, .sidebar-toggle, .gh-corner { display: none !important; }
+
+/* Docsify 内容区适配 Tailwind 布局 */
+#app { width: auto !important; }
+.markdown-section {
+    max-width: 900px !important;
+    padding: 2rem 40px !important;
+    margin: 0 auto !important;
+    background: transparent !important;
+    color: #a0a0a0 !important;
+    line-height: 1.8 !important;
+}
+
+/* 科技感标题 */
+.markdown-section h1 { @apply text-4xl font-black text-white mb-8 tracking-tighter; }
+.markdown-section h2 { @apply text-xl font-bold text-white mt-12 mb-4 pb-2 border-b border-white/5; }
+
+/* 代码块美化 */
+pre {
+    background: #0a0a0a !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+    border-radius: 20px !important;
+    padding: 1.5rem !important;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+code {
+    font-family: 'Fira Code', monospace !important;
+    @apply text-[#40B5AD] bg-[#40B5AD]/10 px-1.5 py-0.5 rounded-md text-sm;
+}

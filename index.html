@@ -2,121 +2,98 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <link rel="icon" href="images/favicon.png">
-    <link rel="apple-touch-icon" href="images/favicon.png">
-    <title>OpenST Archive</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://lib.baomitu.com/marked/11.1.1/marked.min.js"></script>
-    <link rel="stylesheet" href="style.css">
-    <script>
-        tailwind.config = { theme: { extend: { colors: { brand: '#40B5AD', dark: '#1f2223', panel: '#2a2c2d' } } } }
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenST | Portal</title>
+    <script src="https://unpkg.com/tailwindcss-jit-cdn"></script>
+    <style>
+        :root { --brand-color: #40B5AD; }
+
+        body {
+            background: #0c0c0c;
+            color: #d1d1d6;
+            font-family: -apple-system, "SF Pro Display", "PingFang SC", sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* 纯净背景 */
+        .soft-bg {
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at center, #151515 0%, #0c0c0c 100%);
+            z-index: 0;
+        }
+
+        /* 卡片设计：极致干净，取消所有自动生成的干扰字体 */
+        .portal-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.6s cubic-bezier(0.15, 0.8, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 鼠标悬停效果：仅光影变化，无文字干扰 */
+        .portal-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            transform: translateY(-4px);
+        }
+
+        /* 特殊处理：档案馆悬停时边框亮起品牌色 */
+        .archive-hover:hover { border-color: rgba(64, 181, 173, 0.4); }
+        /* Wiki 悬停时边框亮起蓝色 */
+        .wiki-hover:hover { border-color: rgba(59, 130, 246, 0.4); }
+
+        .breath-light {
+            width: 4px; height: 4px;
+            background: var(--brand-color);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--brand-color);
+            opacity: 0.4;
+        }
+    </style>
 </head>
-<body class="bg-dark text-white overflow-hidden font-sans">
-<div id="app" v-cloak class="flex flex-col h-screen h-[100dvh] overflow-hidden" @click="handleImageZoom">
+<body class="min-h-screen flex items-center justify-center p-8 relative">
+<div class="soft-bg"></div>
 
-    <nav-bar
-            v-model:proxy="useProxy"
-            :user="user"
-            :is-admin="isAdmin"
-            @login="handleLogin"
-            @logout="handleLogout"
-            @open-menu="$refs.sidebar.isOpen = true">
-    </nav-bar>
+<script>
+    if (window.location.search.length > 1) {
+        window.location.href = 'archive.html' + window.location.search;
+    }
+</script>
 
-    <div class="flex flex-1 overflow-hidden relative">
-        <side-bar ref="sidebar" :categories="categories" :groups="dynamicTagGroups" :selected="selectedTags" v-model:search="searchQuery" @reset="resetFilters"></side-bar>
-
-        <main class="flex-1 p-6 pb-[20vh] overflow-y-auto bg-dark custom-scrollbar" id="main-content">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 content-start">
-                <a href="upload/upload.html" class="flex flex-col h-full min-h-[320px] items-center justify-center p-6 rounded-[2rem] bg-panel/30 border-2 border-dashed border-white/10 hover:border-brand/50 hover:bg-brand/5 transition-all group lg:col-span-2 xl:col-span-1">
-                    <div class="flex flex-col lg:flex-row xl:flex-col items-center gap-4">
-                        <div class="w-16 h-16 rounded-2xl bg-brand/10 flex items-center justify-center text-3xl group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">🚀</div>
-                        <div class="text-center lg:text-left xl:text-center">
-                            <h3 class="text-lg font-bold text-white tracking-tight">贡献你的机器</h3>
-                            <p class="text-xs text-gray-500 mt-2 leading-relaxed">欢迎分享你的作品<br>点击前往投递系统</p>
-                        </div>
-                    </div>
-                </a>
-
-                <archive-card
-                        v-for="item in pagedList"
-                        :key="item.id"
-                        :is-admin="isAdmin"
-                        :item="{ ...item, preview: getSafePath(item.preview) }"
-                        @open="detailItem = $event"
-                        @edit="openEdit">
-                </archive-card>
-            </div>
-
-            <div v-if="fullFilteredList.length > 0" class="mt-16 mb-32 flex flex-col items-center gap-8">
-
-                <div class="flex items-center gap-4 group">
-                    <div class="h-px w-12 bg-gradient-to-r from-transparent to-white/10 transition-all group-hover:w-16 group-hover:to-brand/30"></div>
-                    <div class="flex flex-col items-center gap-1">
-                        <span class="text-[10px] text-gray-500 font-bold uppercase tracking-[0.3em]">Discovery</span>
-                        <div class="flex items-baseline gap-1.5">
-                            <span class="text-2xl font-black text-white leading-none tracking-tighter">{{ fullFilteredList.length }}</span>
-                            <span class="text-[10px] text-brand font-bold uppercase tracking-wider">Archives Found</span>
-                        </div>
-                    </div>
-                    <div class="h-px w-12 bg-gradient-to-l from-transparent to-white/10 transition-all group-hover:w-16 group-hover:to-brand/30"></div>
-                </div>
-
-                <div v-if="totalPages > 1" class="flex flex-col items-center gap-3">
-                    <div class="flex items-center gap-3">
-                        <button @click="setPage(currentPage - 1)" :disabled="currentPage === 1"
-                                class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:bg-brand hover:text-black hover:scale-110 active:scale-95 disabled:opacity-0 transition-all duration-300">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        </button>
-
-                        <div class="flex items-center gap-3 px-4 py-2 bg-black/40 border border-white/5 rounded-2xl shadow-inner group focus-within:border-brand/30 transition-all">
-                            <input type="number" :value="currentPage" @keyup.enter="setPage($event.target.value)" @blur="setPage($event.target.value)"
-                                   class="w-8 bg-transparent text-center text-lg font-black text-brand outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
-                            <span class="text-white/10 font-light text-xl">/</span>
-                            <span class="text-gray-500 text-sm font-bold tracking-tighter">{{ totalPages }}</span>
-                        </div>
-
-                        <button @click="setPage(currentPage + 1)" :disabled="currentPage === totalPages"
-                                class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:bg-brand hover:text-black hover:scale-110 active:scale-95 disabled:opacity-0 transition-all duration-300">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        </button>
-                    </div>
-                    <span class="text-[9px] text-gray-700 font-bold uppercase tracking-[0.4em] ml-1">Navigate System</span>
-                </div>
-            </div>
-
-            <div v-if="fullFilteredList.length === 0" class="py-20 text-center text-gray-500 italic text-sm">没有找到符合条件的红石机械...</div>
-        </main>
-    </div>
-
-    <detail-modal
-            v-if="detailItem"
-            :item="detailItem"
-            :is-admin="isAdmin"
-            @close="closeDetail"
-            @edit="openEdit">
-    </detail-modal>
-
-    <transition name="fade">
-        <div v-if="zoomImage" class="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl cursor-zoom-out" @click.stop="closeZoom">
-            <button class="absolute top-6 right-6 text-white/50 hover:text-brand transition-colors p-2">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5"/></svg>
-            </button>
-            <div class="relative max-w-[95vw] max-h-[85vh] flex flex-col items-center select-none" @click.stop>
-                <img :src="zoomImage.url" class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl border border-white/5 animate-zoom">
-                <div class="mt-6 px-4 py-1.5 bg-brand/10 border border-brand/20 rounded-full backdrop-blur-md">
-                    <span class="text-brand font-mono text-xs">{{ zoomImage.name }}</span>
-                </div>
-            </div>
+<div class="relative z-10 w-full max-w-5xl">
+    <header class="mb-24 flex items-center gap-6">
+        <h1 class="text-3xl font-bold tracking-tight text-[#f5f5f7]">OpenST</h1>
+        <div class="h-px flex-1 bg-white/5"></div>
+        <div class="flex items-center gap-2 text-[10px] text-gray-600 tracking-widest uppercase">
+            <div class="breath-light"></div>
+            System Active
         </div>
-    </transition>
+    </header>
 
+    <nav class="grid grid-cols-1 md:grid-cols-2 gap-10">
+
+        <a href="wiki/wiki.html" target="_blank" class="portal-card wiki-hover group rounded-[2.5rem] p-12">
+            <h2 class="text-2xl font-semibold mb-4 text-[#e5e5e7]">Wiki</h2>
+            <p class="text-gray-500 text-sm leading-relaxed mb-10 max-w-xs">这是wiki</p>
+            <div class="text-blue-400/60 text-xs font-medium group-hover:text-blue-400 transition-colors tracking-wide">
+                READ DOCUMENTATION ↗
+            </div>
+        </a>
+
+        <a href="archive.html" class="portal-card archive-hover group rounded-[2.5rem] p-12">
+            <h2 class="text-2xl font-semibold mb-4 text-[#e5e5e7]">档案馆</h2>
+            <p class="text-gray-500 text-sm leading-relaxed mb-10 max-w-xs">归档了大量优秀的作品，欢迎游览</p>
+            <div class="text-[#40B5AD] opacity-60 group-hover:opacity-100 transition-opacity text-xs font-medium tracking-wide">
+                EXPLORE REPOSITORY ↗
+            </div>
+        </a>
+
+    </nav>
+
+    <footer class="mt-24 text-[9px] text-gray-800 tracking-[0.4em] uppercase text-center font-medium">
+        <span>© 2026 MC-OpenST · Open Storage Tech</span>
+    </footer>
 </div>
 
-<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-<!--<script src="scripts/mock.js"></script>-->
-<script type="module" src="scripts/main.js"></script>
 </body>
 </html>
