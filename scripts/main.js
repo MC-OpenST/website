@@ -156,12 +156,16 @@ const AppOptions = {
         openDetail(item) {
             this.detailItem = item;
             if (item && item.sub_id) {
-                window.history.replaceState(null, '', `?${item.sub_id}`);
+                const newUrl = `${window.location.pathname}?${item.sub_id}`;
+                window.history.pushState({ subId: item.sub_id }, '', newUrl);
             }
         },
+
+        // 详情页关闭：还原 URL
         closeDetail() {
             this.detailItem = null;
-            window.history.replaceState(null, '', window.location.pathname);
+            // 彻底移除查询参数，恢复到 example.com/index.html
+            window.history.pushState({}, '', window.location.pathname);
         },
 
         handleCopyID(subId) {
@@ -252,6 +256,17 @@ const AppOptions = {
             this.checkUrlLocation();
 
         } catch (e) { console.error("Data Load Error", e); }
+
+        window.addEventListener('popstate', () => {
+            // 当点击浏览器返回键时，重新检测 URL 决定是否显示弹窗
+            const queryString = window.location.search.replace('?', '');
+            if (queryString && queryString.startsWith('sub-')) {
+                const target = this.allData.find(item => item.sub_id === queryString);
+                this.detailItem = target || null;
+            } else {
+                this.detailItem = null;
+            }
+        });
     }
 };
 

@@ -17,11 +17,6 @@ export const NavBar = {
         </div>
 
         <div class="flex items-center gap-6">
-            <label class="hidden xs:flex text-[12px] text-gray-500 items-center gap-2 cursor-pointer hover:text-white transition">
-                <input type="checkbox" :checked="proxy" @change="$emit('update:proxy', $event.target.checked)" class="w-3.5 h-3.5 accent-brand rounded">
-                <span>Github加速</span>
-            </label>
-
             <div class="flex items-center gap-3 border-l border-white/10 pl-6">
                 <template v-if="user">
                     <div class="flex flex-col items-end hidden sm:flex">
@@ -162,25 +157,24 @@ export const DetailModal = {
     computed: {
         renderedDescription() {
             if (!this.item?.description) return '<p class="italic opacity-50 text-gray-600">作者没留下任何简介，一定是大佬吧！</p>';
+            // 使用 marked 解析 Markdown，支持换行和 GitHub 风格
             return marked.parse(this.item.description, { breaks: true, gfm: true });
         }
     },
     methods: {
         handleMdClick(e) {
+            // 点击 Markdown 里的图片也可以触发放大查看
             if (e.target.tagName === 'IMG') {
                 this.$root.handleImageZoom(e);
             }
         },
-        // 复制直链并调用主程序的反馈逻辑
         copyPermalink(subId) {
             if (!subId) return;
             const url = `${window.location.origin}/index.html?${subId}`;
             navigator.clipboard.writeText(url).then(() => {
-                // 调用 main.js 中的提示方法
+                // 调用 main.js 中的提示方法（如弹窗通知）
                 if (this.$root.handleCopyID) {
                     this.$root.handleCopyID(subId);
-                } else {
-                    return"";
                 }
             });
         }
@@ -188,6 +182,7 @@ export const DetailModal = {
     template: `
     <div class="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-6 detail-modal-container">
         <div class="absolute inset-0 bg-black/95 backdrop-blur-md" @click="$emit('close')"></div>
+        
         <div class="bg-[#1a1a1a] w-full max-w-6xl md:rounded-[2rem] shadow-2xl overflow-hidden relative z-10 flex flex-col md:flex-row h-full md:h-auto md:max-h-[90vh] border border-white/5">
             
             <div v-if="isAdmin" class="absolute top-6 left-6 z-30 flex gap-2">
@@ -232,13 +227,30 @@ export const DetailModal = {
 
                     <div class="flex-1">
                         <h4 class="text-[10px] text-brand font-bold mb-3 uppercase tracking-widest opacity-80">Description</h4>
-                        <div class="markdown-body" @click="handleMdClick">
+                        <div class="markdown-body text-sm leading-relaxed" @click="handleMdClick">
                             <div v-html="renderedDescription"></div>
                         </div>
                     </div>
 
-                    <div class="pt-6 pb-10 mt-auto">
-                        <a :href="item.downloadLink || $parent.getDownloadLink(item)" class="bg-brand hover:brightness-110 text-black text-center py-4 rounded-2xl text-lg font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.97] shadow-xl shadow-brand/20">
+                    <div class="pt-6 pb-10 mt-auto flex flex-col gap-4">
+                        
+                        <div class="flex items-center justify-between px-4 py-3 bg-white/5 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
+                            <div class="flex items-center gap-3 text-left">
+                                <div class="w-8 h-8 rounded-full bg-brand/10 flex items-center justify-center text-brand">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14H11V21L20 10H13Z" /></svg>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-bold text-gray-200">GitHub 下载加速</span>
+                                    <span class="text-[10px] text-gray-500 font-medium">如果下载速度满请开启</span>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" :checked="$root.useProxy" @change="$root.useProxy = $event.target.checked" class="sr-only peer">
+                                <div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand peer-checked:after:bg-black"></div>
+                            </label>
+                        </div>
+
+                        <a :href="$parent.getDownloadLink(item)" class="bg-brand hover:brightness-110 text-black text-center py-4 rounded-2xl text-lg font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.97] shadow-xl shadow-brand/20">
                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                                   stroke-width="2.5"

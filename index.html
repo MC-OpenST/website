@@ -91,7 +91,13 @@
         </main>
     </div>
 
-    <detail-modal v-if="detailItem" :item="detailItem" :is-admin="isAdmin" @close="detailItem = null" @edit="openEdit"></detail-modal>
+    <detail-modal
+            v-if="detailItem"
+            :item="detailItem"
+            :is-admin="isAdmin"
+            @close="closeDetail"
+            @edit="openEdit">
+    </detail-modal>
 
     <transition name="fade">
         <div v-if="zoomImage" class="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl cursor-zoom-out" @click.stop="closeZoom">
