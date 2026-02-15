@@ -171,10 +171,24 @@
         methods: {
             checkAuth() {
                 const raw = localStorage.getItem('gh_auth');
-                if (!raw) { window.location.href = 'wiki.html'; return; }
-                const authData = JSON.parse(raw);
-                this.user = authData.user;
-                this.token = authData.access_token;
+                if (!raw) {
+                    window.location.href = 'wiki.html';
+                    return;
+                }
+
+                try {
+                    const authData = JSON.parse(raw);
+                    console.log("检测到登录数据:", authData);
+                    this.token = authData.token || authData.access_token;
+                    this.user = authData.user || { login: 'Unknown' };
+                    if (!this.token) {
+                        alert("登录信息缺失令牌，请尝试重新登录");
+                        window.location.href = 'wiki.html';
+                    }
+                } catch (e) {
+                    console.error("解析登录信息失败", e);
+                    window.location.href = 'wiki.html';
+                }
             },
             handleImageSelect(e) {
                 const files = Array.from(e.target.files);
