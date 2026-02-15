@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>OpenST Wiki</title>
+    <link rel="icon" href="../images/favicon.png"></link>
+    <link rel="apple-touch-icon" href="../images/favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple.css">
@@ -61,12 +63,19 @@
             readyTransition: true,
             responsiveTables: true
         },
-        executeScript: true
+        executeScript: true,
+        search: {
+            paths: 'auto',
+            placeholder: '在此搜索...',
+            noData: '未找到结果',
+            depth: 3,
+            hideOtherSidebarContent: false,
+        }
     };
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/docsify@4"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/js/docsify-themeable.min.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1/prism.min.js"></script>
