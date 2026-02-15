@@ -12,47 +12,52 @@ Vue.createApp({
         }
     },
     template: `
-    <teleport to="body">
-        <header class="top-bar">
-            <div class="bar-content">
-                <div class="logo">
-                    <div class="logo-dot"></div>
-                    <span>OPENST_WIKI</span>
-                </div>
-                
-                <div class="flex items-center gap-6">
-                    <div v-if="user" class="status-indicator">
-                        <div class="flex flex-col items-end leading-none mr-1">
-                            <span class="text-white text-[11px] font-bold">{{ user.login }}</span>
-                            <span v-if="user.isStaff" class="text-[#40B5AD] text-[8px] font-black uppercase tracking-widest mt-1">Staff</span>
-                        </div>
-                        <img :src="user.avatar" class="user-avatar-frame">
-                        <button @click="logout" class="logout-btn font-bold uppercase tracking-tighter">Exit</button>
+<teleport to="body">
+    <header class="top-bar">
+        <div class="bar-content">
+            <div class="logo">
+                <div class="logo-dot"></div>
+                <span class="logo-text">OPENST_WIKI</span>
+            </div>
+            
+            <div class="flex items-center gap-6">
+                <div v-if="user" class="status-indicator">
+                    <div class="flex flex-col items-end leading-none mr-1">
+                        <span class="text-white text-[12px] font-black tracking-tight">{{ user.login }}</span>
+                        <span v-if="user.isStaff" class="text-[#40B5AD] text-[9px] font-black uppercase tracking-[0.2em] mt-1">Staff</span>
                     </div>
-
-                    <button v-else @click="loginWithGitHub" :disabled="step === 2" class="github-login-btn">
-                        {{ step === 2 ? 'IDENTIFYING...' : 'GITHUB LOGIN' }}
-                    </button>
+                    <img :src="user.avatar" class="user-avatar-frame">
+                    <button @click="logout" class="logout-btn font-black uppercase tracking-tighter">Exit</button>
                 </div>
-            </div>
-        </header>
 
-        <div v-if="user" class="fab-container">
-            <div class="fab-item">
-                <span class="fab-label">Modify Current</span>
-                <button @click="goToEdit('modify')" class="fab-btn">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </button>
-            </div>
-            <div class="fab-item">
-                <span class="fab-label">Create New</span>
-                <button @click="goToEdit('new')" class="fab-btn primary">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <button v-else @click="loginWithGitHub" :disabled="step === 2" class="github-login-btn">
+                    <span class="font-black">{{ step === 2 ? 'IDENTIFYING...' : 'GITHUB LOGIN' }}</span>
                 </button>
             </div>
         </div>
-    </teleport>
-    `,
+    </header>
+
+    <div v-if="user" class="fab-container">
+        <div class="fab-item">
+            <span class="fab-label font-black">Modify Current</span>
+            <button @click="goToEdit('modify')" class="fab-btn">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="fab-item">
+            <span class="fab-label font-black">Create New</span>
+            <button @click="goToEdit('new')" class="fab-btn primary">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 4v16m8-8H4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+</teleport>
+`,
     async mounted() {
         this.checkLogin();
         const code = new URLSearchParams(window.location.search).get('code');

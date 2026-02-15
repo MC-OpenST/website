@@ -9,7 +9,29 @@
     <link rel="stylesheet" href="wiki-style.css">
 
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // 定义你的 OpenST 品牌色
+                        brand: {
+                            DEFAULT: '#40B5AD',
+                            light: '#5fc7bf',
+                            dark: '#2d827c',
+                        },
+                        panel: 'rgba(255, 255, 255, 0.02)', // 内容卡片背景
+                    },
+                    // 苹果同款平滑动画曲线
+                    transitionTimingFunction: {
+                        'apple': 'cubic-bezier(0.16, 1, 0.3, 1)',
+                    }
+                }
+            }
+        }
+    </script>
     <style>
         #wiki-collab {
             position: relative;
@@ -27,15 +49,25 @@
 <script>
     // Docsify 配置
     window.$docsify = {
-        name: 'OpenST Wiki',
+        // 将 name 设为空，或者设为你的 Vue 模板中 Logo 对应的 HTML
+        // 这样侧边栏顶部就不会多出一个多余的、样式不对的文本
+        name: '',
+
         basePath: 'content/',
         relativePath: true,
         loadSidebar: true,
         auto2top: true,
+
+        // 加上这一行，可以确保侧边栏在切换时更顺滑
+        mergeNavbar: true,
+
         themeable: {
             readyTransition: true,
             responsiveTables: true
-        }
+        },
+
+        // 配合我们加粗的字体，调整 Docsify 的渲染逻辑
+        executeScript: true
     };
 </script>
 

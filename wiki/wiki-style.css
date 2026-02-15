@@ -1,3 +1,7 @@
+/* * OpenST Wiki - Final Precision Polish
+ * 修复：侧边栏开关状态切换、图标精准居中、移动端卡片宽度
+ */
+
 :root {
     --brand-color: #40B5AD;
     --base-background-color: #0c0c0c;
@@ -12,7 +16,7 @@
     --content-padding: 4rem;
 }
 
-/* 全局与背景 */
+/* --- 1. 全局与背景 --- */
 body {
     background: radial-gradient(circle at center, #151515 0%, #0c0c0c 100%) fixed !important;
     margin: 0;
@@ -25,75 +29,95 @@ body {
     z-index: -1;
 }
 
-/* 顶栏设计 */
+/* --- 2. 顶栏设计 --- */
 .top-bar {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    height: 64px;
-    z-index: 1000;
-    background: rgba(12, 12, 12, 0.6);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    display: flex; align-items: center;
+    position: fixed; top: 0; left: 0; right: 0; height: 64px; z-index: 1000;
+    background: rgba(12, 12, 12, 0.6); backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05); display: flex; align-items: center;
 }
+.bar-content { width: 100%; max-width: 1400px; margin: 0 auto; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; }
+.logo { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 13px; letter-spacing: 0.2em; color: #fff; }
+.logo-dot { width: 8px; height: 8px; background: var(--brand-color); border-radius: 2px; transform: rotate(45deg); }
 
-.bar-content {
-    width: 100%;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 40px;
-    display: flex; justify-content: space-between; align-items: center;
-}
-
-.logo {
-    display: flex; align-items: center; gap: 12px;
-    font-weight: 700; font-size: 13px; letter-spacing: 0.2em; color: #fff;
-}
-
-.logo-dot {
-    width: 8px; height: 8px; background: var(--brand-color);
-    border-radius: 2px; transform: rotate(45deg);
-}
-
-.bar-actions { display: flex; align-items: center; gap: 32px; }
-
-.top-nav { display: flex; gap: 24px; }
-.top-nav a {
-    text-decoration: none; color: rgba(255, 255, 255, 0.3);
-    font-size: 10px; font-weight: 600; letter-spacing: 0.1em; transition: 0.3s;
-}
-.top-nav a:hover { color: var(--brand-color); }
-
-/* 状态灯 */
-.status-indicator {
-    display: flex; align-items: center; gap: 10px;
-    cursor: pointer; padding: 6px 14px; border-radius: 20px;
-    background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);
-    transition: 0.3s;
-}
-.status-indicator:hover { background: rgba(255, 255, 255, 0.08); }
-.status-label { font-size: 9px; font-weight: 700; color: rgba(255, 255, 255, 0.4); letter-spacing: 0.1em; }
-
-.breath-light { width: 6px; height: 6px; border-radius: 50%; transition: 1s; }
-.breath-light.inactive { background: rgba(255, 255, 255, 0.2); }
-.breath-light.active {
-    background: var(--brand-color);
-    box-shadow: 0 0 12px var(--brand-color);
-    animation: breath 4s infinite ease-in-out;
-}
-
-@keyframes breath {
-    0%, 100% { transform: scale(1); opacity: 0.5; }
-    50% { transform: scale(1.3); opacity: 1; }
-}
-
-/* Docsify 内容调整 */
-section.content { padding-top: 84px !important; }
-.sidebar {
-    padding-top: 84px !important;
-    border-right: none !important;
+/* --- 3. 侧边栏开关 (修正：状态感知与绝对居中) --- */
+.sidebar-toggle, .sidebar-toggle-button {
     background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.sidebar-toggle {
+    position: fixed !important;
+    left: 24px !important;
+    bottom: 32px !important;
+    top: auto !important;
+    width: 48px !important;
+    height: 48px !important;
+    background: rgba(20, 20, 20, 0.8) !important;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 15px !important;
+
+    /* 核心居中逻辑 */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    z-index: 10001 !important;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    cursor: pointer;
+}
+
+/* 1. 先把原有的那三条实线杠杠藏起来 */
+.sidebar-toggle span {
+    display: none !important;
+}
+
+/* 2. 用伪元素注入字符 */
+.sidebar-toggle::before {
+    /* 默认显示三杠符 \2630 */
+    content: "\2630" !important;
+    color: var(--brand-color) !important;
+    font-size: 20px !important;
+    font-weight: bold !important;
+    transition: all 0.3s ease !important;
+}
+
+/* 3. 状态切换：开启侧边栏时变为 X */
+body:not(.close) .sidebar-toggle::before {
+    content: "\2630" !important;
+    transform: rotate(90deg) !important; /* 加个旋转动效更有质感 */
+}
+
+/* 4. 移动端颜色翻转适配 */
+@media screen and (max-width: 768px) {
+    body:not(.close) .sidebar-toggle {
+        background: var(--brand-color) !important;
+    }
+    body:not(.close) .sidebar-toggle::before {
+        color: #000 !important;
+    }
+}
+
+
+
+
+@media screen and (max-width: 768px) {
+    .sidebar-toggle { left: 20px !important; bottom: 20px !important; transform: none !important; }
+    body:not(.close) .sidebar-toggle { background: var(--brand-color) !important; }
+    body:not(.close) .sidebar-toggle span::before,
+    body:not(.close) .sidebar-toggle span::after { background-color: #000 !important; }
+}
+
+/* --- 4. Docsify 布局修正 (移动端 90% 宽度) --- */
+section.content { padding-top: 84px !important; }
+
+.sidebar {
+    padding-top: 80px !important;
+    background: rgba(12, 12, 12, 0.9) !important;
+    backdrop-filter: blur(25px);
+    border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+    z-index: 10000 !important;
 }
 
 .markdown-section {
@@ -102,132 +126,113 @@ section.content { padding-top: 84px !important; }
     border-radius: 28px;
     padding: var(--content-padding) !important;
     margin: 40px auto 100px auto !important;
-    transition: 0.6s cubic-bezier(0.15, 0.8, 0.2, 1);
-}
-.markdown-section:hover { border-color: rgba(64, 181, 173, 0.15); }
-
-/* 编辑器 Modal */
-.editor-modal {
-    background: rgba(15, 15, 15, 0.85);
-    backdrop-filter: blur(30px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    max-width: var(--content-max-width);
 }
 
-.github-login-btn {
-    background: #fff; color: #000; font-size: 10px; font-weight: 800;
-    padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer;
-    transition: 0.3s; letter-spacing: 0.1em;
+@media screen and (max-width: 768px) {
+    body.close .content, body:not(.close) .content { transform: none !important; margin-left: 0 !important; width: 100% !important; }
+    .markdown-section {
+        width: 90% !important;
+        padding: 1.5rem !important;
+        margin: 20px auto 100px auto !important;
+        border-radius: 20px;
+    }
 }
 
-.edit-portal-btn {
-    background: var(--brand-color); color: #000; font-size: 10px; font-weight: 800;
-    padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer;
-    box-shadow: 0 4px 12px rgba(64, 181, 173, 0.3); transition: 0.3s;
-}
-
-.edit-portal-btn:hover { transform: translateY(-2px); brightness: 1.1; }
-
-.logout-btn {
-    font-size: 8px; color: rgba(255,255,255,0.2); background: none; border: none;
-    cursor: pointer; margin-left: 10px;
-}
-.logout-btn:hover { color: #ff4d4d; }
-
-/* --- Docsify 适配修正 --- */
-/* 确保侧边栏和正文内容都在顶栏下方 */
-.sidebar {
-    padding-top: 80px !important;
-    z-index: 20 !important;
-}
-
-.sidebar-toggle {
-    top: 15px !important;
-    background: rgba(12, 12, 12, 0.7) !important;
-    backdrop-filter: blur(10px);
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    z-index: 1001 !important;
-}
-
-/* --- 用户头像修正 --- */
-.user-avatar-frame {
-    width: 32px;
-    height: 32px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    object-fit: cover; /* 核心：防止图片拉伸变瘪 */
-    background: #1a1a1a;
-}
-
-/* --- 右下角赛博浮动按钮 (FAB) --- */
+/* --- 5. 右下角 FAB 按钮 --- */
 .fab-container {
-    position: fixed;
-    bottom: 40px;
-    right: 40px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    z-index: 2000;
+    position: fixed; bottom: 40px; right: 40px;
+    display: flex; flex-direction: column; gap: 16px; z-index: 9999;
+}
+.fab-item { display: flex; align-items: center; gap: 12px; justify-content: flex-end; }
+.fab-btn {
+    width: 52px; height: 52px; border-radius: 18px; border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(20, 20, 20, 0.8); backdrop-filter: blur(10px);
+    color: var(--brand-color); display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: 0.4s; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+.fab-btn.primary { background: var(--brand-color); color: #000; border: none; }
+@media screen and (max-width: 768px) { .fab-label { display: none !important; } .fab-container { right: 20px; bottom: 20px; } }
+
+/* --- 6. 用户组件 --- */
+.github-login-btn { background: #fff; color: #000; font-size: 10px; font-weight: 800; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; }
+.user-avatar-frame { width: 32px; height: 32px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); object-fit: cover; }
+
+/* 1. 针对标题：增加厚度与字符间距，营造高级感 */
+.markdown-section h1,
+.markdown-section h2,
+.markdown-section h3 {
+    font-weight: 800 !important; /* 极粗体 */
+    color: var(--heading-color) !important;
+    letter-spacing: -0.02em !important; /* 略微紧凑，更具张力 */
+    margin-top: 2rem !important;
 }
 
-.fab-item {
+.markdown-section h1 {
+    font-size: 2.2rem !important;
+    -webkit-text-stroke: 0.5px var(--heading-color); /* 微量描边让标题更黑 */
+}
+
+/* 2. 针对正文：提高字重，增强易读性 */
+.markdown-section p,
+.markdown-section li {
+    font-weight: 500 !important; /* 从普通的 400 提升到 500 */
+    line-height: 1.7 !important;
+    color: #d1d1d6 !important; /* 略微提亮，配合加粗 */
+}
+
+/* 3. 针对加粗文本 (**text**)：让它在加粗的正文中更突出 */
+.markdown-section strong {
+    font-weight: 800 !important;
+    color: var(--brand-color) !important; /* 加粗部分直接套用品牌色，非常有神 */
+}
+
+/* 4. 移动端微调：防止粗体在小屏幕上糊成一团 */
+@media screen and (max-width: 768px) {
+    .markdown-section h1 { font-size: 1.8rem !important; }
+    .markdown-section p {
+        font-weight: 450 !important; /* 移动端字重稍微轻一点点，防止晕墨感 */
+    }
+}
+
+/* 5. 侧边栏导航文字加粗 */
+.sidebar nav li a {
+    font-weight: 600 !important;
+    font-size: 15px !important;
+}
+
+.logo {
     display: flex;
     align-items: center;
     gap: 12px;
-    justify-content: flex-end;
 }
 
-.fab-btn {
-    width: 52px;
-    height: 52px;
-    border-radius: 18px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(20, 20, 20, 0.8);
-    backdrop-filter: blur(10px);
-    color: rgba(255, 255, 255, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
-}
-
-.fab-btn.primary {
-    background: var(--brand-color);
-    color: #000;
-    border: none;
-}
-
-.fab-btn:hover {
-    transform: scale(1.1) translateY(-4px);
-    color: #fff;
-    border-color: var(--brand-color);
-}
-
-.fab-btn.primary:hover {
-    filter: brightness(1.1);
-    box-shadow: 0 0 20px rgba(64, 181, 173, 0.3);
-}
-
-/* 标签文字样式 */
-.fab-label {
-    background: rgba(0, 0, 0, 0.6);
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 10px;
-    font-weight: 700;
-    padding: 6px 12px;
-    border-radius: 8px;
-    opacity: 0;
-    transform: translateX(10px);
-    transition: 0.3s;
-    pointer-events: none;
-    letter-spacing: 0.1em;
+.logo-text {
+    color: var(--brand-color) !important; /* 换上品牌色 */
+    font-size: 14px !important;           /* 稍微加大一点点 */
+    font-weight: 900 !important;           /* 极粗体 */
+    letter-spacing: 0.15em !important;     /* 保持宽阔的字母间距，显高级 */
     text-transform: uppercase;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+
+    /* 增加微弱的品牌色霓虹感，让文字更立体 */
+    text-shadow: 0 0 10px rgba(64, 181, 173, 0.3);
+
+    /* 适配之前提到的“整体粗度” */
+    -webkit-text-stroke: 0.2px var(--brand-color);
 }
 
-.fab-item:hover .fab-label {
-    opacity: 1;
-    transform: translateX(0);
+/* 既然 Logo 字变绿了，那个小方点可以换成白色，形成视觉对比，或者保持一致 */
+.logo-dot {
+    background: #fff !important; /* 白色点在绿色字中间会非常跳跃，更有设计感 */
+    box-shadow: 0 0 12px var(--brand-color);
+}
+
+/* 隐藏 Docsify 侧边栏自带的默认名字，防止重复 */
+.sidebar .app-name {
+    display: none !important;
+}
+
+/* 调整侧边栏内容顶部的间距，避开你的 Top Bar */
+.sidebar {
+    padding-top: 100px !important; /* 给 64px 的顶栏留足呼吸空间 */
 }
