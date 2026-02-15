@@ -96,7 +96,7 @@
     </main>
 
     <footer class="mt-3 flex flex-col sm:flex-row items-center justify-between gap-3 px-2">
-        <div class="flex items-center gap-3 w-full sm:w-auto">
+        <div class="flex items-center gap-3 w-full sm:w-auto overflow-hidden">
             <label class="shrink-0 cursor-pointer">
                 <input type="file" multiple accept="image/*" @change="handleImageSelect" class="hidden">
                 <div class="px-3 py-2 bg-white/5 hover:bg-[#40B5AD]/20 border border-white/10 rounded-lg transition-all text-[9px] font-black text-white/40 uppercase tracking-widest">
@@ -110,7 +110,7 @@
                     <img :src="imageMap[file.name]" @click="insertImageLink(file.name)"
                          class="w-full h-full object-cover rounded border border-white/10 cursor-pointer hover:border-[#40B5AD] opacity-60 hover:opacity-100">
                     <div @click.stop="removeImage(index)"
-                         class="absolute -top-1 -right-1 w-3 h-3 bg-red-500/80 text-white text-[8px] flex items-center justify-center rounded-full cursor-pointer">
+                         class="absolute -top-1 -right-1 w-3 h-3 bg-red-500/80 text-white text-[8px] flex items-center justify-center rounded-full cursor-pointer shadow-lg">
                         ×
                     </div>
                 </div>
@@ -160,7 +160,6 @@
             if (!this.isNewFile) {
                 this.loading = true;
                 const normalizedPath = this.filePath.startsWith('/') ? this.filePath : '/' + this.filePath;
-                // 解决 404：拼接绝对路径
                 const targetUrl = `${window.location.origin}/wiki${WIKI_BASE}${normalizedPath}.md`;
                 try {
                     const res = await fetch(targetUrl);
@@ -182,9 +181,7 @@
                 const totalSize = files.reduce((acc, f) => acc + f.size, 0);
                 if (totalSize > 50 * 1024 * 1024) return alert("Total size exceeds 50MB limit!");
 
-                this.imageFiles = files;
-                Object.values(this.imageMap).forEach(URL.revokeObjectURL);
-                this.imageMap = {};
+                this.imageFiles = [...this.imageFiles, ...files];
                 files.forEach(file => {
                     this.imageMap[file.name] = URL.createObjectURL(file);
                 });
@@ -225,28 +222,40 @@
                     folder.file(`${baseName}.md`, this.content);
                     this.imageFiles.forEach(f => folder.file(f.name, f));
 
-                    const zipBlob = await zip.generateAsync({ type: "blob" });
+                    const zipBlob = await zip.generateAsync({type: "blob"});
                     const zipFileName = `${this.isNewFile ? 'wiki-submission' : 'wiki-modify'}-${baseName}.zip`;
 
                     const fd = new FormData();
                     fd.append('file', zipBlob, zipFileName);
                     fd.append('user', this.user.login);
-                    fd.append('path', `wiki/contents/${baseName}`); // 提交物理路径
+                    fd.append('path', `wiki/contents/${baseName}`);
                     fd.append('title', `[Wiki ${this.isNewFile ? 'New' : 'Edit'}] ${baseName}`);
 
                     const res = await fetch(`${WORKER_URL}/api/wiki/submit-archive`, {
                         method: 'POST',
-                        headers: { 'Authorization': `Bearer ${this.token}` },
+                        headers: {'Authorization': `Bearer ${this.token}`},
                         body: fd
                     });
 
                     if (res.ok) {
                         const data = await res.json();
-                        alert(`🎉 Success! Issue #${data.issueNumber} created.`);
-                        window.location.href = data.issueUrl;
-                    } else { throw new Error(await res.text()); }
-                } catch (e) { alert('Failed: ' + e.message); }
-                finally { this.loading = false; }
+                        const issueNum = data.issueNumber || data.number;
+
+                        if (issueNum) {
+                            alert(`🎉 提交成功！Issue #${issueNum} 已创建。`);
+                            window.location.href = `https://github.com/MC-OpenST/website/issues/${issueNum}`;
+                        } else {
+                            alert(`⚠️ GitHub 未能返回编号：\n${JSON.stringify(data)}`);
+                        }
+                    } else {
+                        const errorMsg = await res.text();
+                        alert("❌ Worker 转发失败: " + errorMsg);
+                    }
+                } catch (err) {
+                    alert("❌ 脚本执行错误: " + err.message);
+                } finally {
+                    this.loading = false;
+                }
             }
         }
     }).mount('#editor-app');
