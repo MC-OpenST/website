@@ -18,7 +18,7 @@ Vue.createApp({
         <div class="bar-content">
             <div class="logo">
                 <div class="logo-dot"></div>
-                <span class="logo-text">OPENST_WIKI</span>
+                <span class="logo-text"></span>
             </div>
             
             <div class="flex items-center gap-6">

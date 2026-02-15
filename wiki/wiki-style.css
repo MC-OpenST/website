@@ -208,31 +208,19 @@ section.content { padding-top: 84px !important; }
 }
 
 .logo-text {
-    color: var(--brand-color) !important; /* 换上品牌色 */
-    font-size: 14px !important;           /* 稍微加大一点点 */
-    font-weight: 900 !important;           /* 极粗体 */
-    letter-spacing: 0.15em !important;     /* 保持宽阔的字母间距，显高级 */
+    color: var(--brand-color) !important;
+    font-size: 14px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.15em !important;
     text-transform: uppercase;
 
-    /* 增加微弱的品牌色霓虹感，让文字更立体 */
+
     text-shadow: 0 0 10px rgba(64, 181, 173, 0.3);
 
-    /* 适配之前提到的“整体粗度” */
+
     -webkit-text-stroke: 0.2px var(--brand-color);
 }
 
-/* 既然 Logo 字变绿了，那个小方点可以换成白色，形成视觉对比，或者保持一致 */
-.logo-dot {
-    background: #fff !important; /* 白色点在绿色字中间会非常跳跃，更有设计感 */
-    box-shadow: 0 0 12px var(--brand-color);
-}
-
-/* 隐藏 Docsify 侧边栏自带的默认名字，防止重复 */
-.sidebar .app-name {
-    display: none !important;
-}
-
-/* 调整侧边栏内容顶部的间距，避开你的 Top Bar */
 .sidebar {
-    padding-top: 100px !important; /* 给 64px 的顶栏留足呼吸空间 */
+    padding-top: 100px !important;
 }
