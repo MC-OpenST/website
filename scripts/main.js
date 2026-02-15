@@ -190,6 +190,10 @@ const AppOptions = {
                 this.isAdmin = data.isAdmin;
             } catch (e) { console.error("Admin check failed", e); }
         },
+        logout() {
+            this.userToken = '';
+            localStorage.removeItem('gh_auth');
+        },
 
         // UI 交互方法
         toggleTag(cat, tag) {
