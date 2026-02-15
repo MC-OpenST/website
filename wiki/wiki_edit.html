@@ -2,136 +2,86 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>OpenST Wiki Editor</title>
+    <title>Edit Wiki - OpenST</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown-dark.css">
 
     <style>
-        :root {
-            --brand-color: #40B5AD;
-            --bg-deep: #0c0c0c;
-        }
+        :root { --brand-color: #40B5AD; --bg-deep: #0c0c0c; }
+        body { background-color: var(--bg-deep); color: #e0e0e0; font-family: 'Inter', system-ui, sans-serif; overflow: hidden; }
 
-        body {
-            background-color: var(--bg-deep);
-            color: #e0e0e0;
-            font-family: 'Inter', system-ui, sans-serif;
-            overflow: hidden;
-        }
+        .glass-panel { background: rgba(255, 255, 255, 0.01); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px; }
+        .cyber-btn { background: var(--brand-color); color: #000; font-weight: 800; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .cyber-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 0 20px rgba(64, 181, 173, 0.4); }
 
-        /* 磨砂玻璃质感 */
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.01);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 40px;
-        }
+        /* 预览区定制 */
+        .markdown-body { background: transparent !important; font-size: 14px; line-height: 1.8; color: rgba(255,255,255,0.8); }
+        .markdown-body h1, .markdown-body h2 { border-bottom-color: rgba(255,255,255,0.1); }
 
-        /* 赛博按钮 */
-        .cyber-btn {
-            background: var(--brand-color);
-            color: #000;
-            font-weight: 800;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 4px 20px rgba(64, 181, 173, 0.2);
-        }
+        /* 隐藏滚动条但保留功能 */
+        .no-scrollbar::-webkit-scrollbar { width: 4px; }
+        .no-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
 
-        .cyber-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(64, 181, 173, 0.4);
-            filter: brightness(1.1);
-        }
-
-        .cyber-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
-        /* 编辑器文本域自定义 */
-        textarea {
-            caret-color: var(--brand-color);
-            line-height: 2.2;
-        }
-
-        textarea::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        textarea::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-        }
-
-        /* 动画 */
-        .fade-in {
-            animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        /* 左右分割线 */
+        .resizer { width: 1px; background: rgba(255,255,255,0.05); margin: 0 4px; }
     </style>
 </head>
 <body>
 
-<div id="editor-app" class="h-screen w-full flex flex-col p-6 lg:p-10 fade-in">
+<div id="editor-app" class="h-screen w-full flex flex-col p-4 lg:p-6 fade-in">
 
-    <header class="flex justify-between items-end mb-8 px-4">
-        <div class="space-y-3">
-            <div class="flex items-center gap-3 text-[10px] font-black tracking-[0.3em] text-white/20">
-                <a href="wiki.html" class="hover:text-[#40B5AD] transition-all">EXIT_WIKI</a>
-                <span>/</span>
-                <span class="text-white/60">REVISION_CORE_V4</span>
-            </div>
-            <h1 class="text-xl lg:text-2xl font-light tracking-tight flex items-center gap-2">
-                <span class="text-white/10 font-mono">content/</span>
-                <span class="text-white/90">{{ filePath }}</span>
-                <span class="text-[#40B5AD]">.md</span>
+    <header class="flex justify-between items-center mb-4 px-4">
+        <div class="flex items-center gap-4">
+            <a href="wiki.html" class="text-[10px] font-black tracking-[0.3em] text-white/20 hover:text-[#40B5AD] transition-all uppercase">Exit</a>
+            <div class="h-4 w-px bg-white/10"></div>
+            <h1 class="text-sm font-mono tracking-tighter text-white/60">
+                editing: <span class="text-[#40B5AD]">{{ filePath }}</span>
             </h1>
         </div>
 
-        <div class="flex items-center gap-6">
-            <div v-if="user" class="hidden md:flex flex-col items-end leading-none">
-                <span class="text-white/40 text-[10px] font-mono mb-1 uppercase tracking-widest">Operator</span>
-                <span class="text-white text-xs font-bold">{{ user.login }}</span>
-            </div>
-            <button @click="submitEdit" :disabled="loading || !content.trim()" class="cyber-btn px-8 py-3 rounded-xl text-xs">
-                {{ loading ? 'Pushing Data...' : 'Commit Changes' }}
+        <div class="flex items-center gap-4">
+            <span v-if="loading" class="text-[10px] text-white/20 animate-pulse tracking-widest uppercase">Syncing...</span>
+            <button @click="submitEdit" :disabled="loading || !content.trim()" class="cyber-btn px-6 py-2 rounded-lg text-[11px]">
+                {{ loading ? 'WAIT' : 'COMMIT' }}
             </button>
         </div>
     </header>
 
-    <main class="flex-1 flex flex-col glass-panel relative overflow-hidden">
-        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#40B5AD]/20 to-transparent"></div>
-
-        <textarea
-                v-model="content"
-                spellcheck="false"
-                placeholder="// Loading content or waiting for input..."
-                class="flex-1 w-full p-8 lg:p-14 bg-transparent outline-none font-mono text-sm lg:text-base text-white/70 resize-none overflow-y-auto">
-        </textarea>
-
-        <footer class="h-10 border-t border-white/5 flex items-center justify-between px-8 bg-black/20">
-            <div class="flex gap-6 items-center text-[9px] font-mono text-white/20 tracking-widest uppercase">
-                <span class="flex items-center gap-1.5">
-                    <span class="w-1 h-1 rounded-full bg-[#40B5AD]"></span>
-                    {{ content.length }} chars
-                </span>
-                <span class="flex items-center gap-1.5">
-                    <span class="w-1 h-1 rounded-full bg-white/20"></span>
-                    {{ content.split('\n').length }} lines
-                </span>
+    <main class="flex-1 flex glass-panel overflow-hidden">
+        <section class="flex-1 flex flex-col min-w-0">
+            <div class="px-6 py-2 border-bottom border-white/5 text-[9px] text-white/20 font-mono tracking-widest uppercase flex justify-between">
+                <span>Editor / Markdown</span>
+                <span>{{ content.length }} chars</span>
             </div>
-            <div class="text-[9px] font-mono text-white/10 tracking-[0.2em] uppercase">
-                OpenST Archive System v4.0.2
+            <textarea
+                    v-model="content"
+                    spellcheck="false"
+                    class="flex-1 w-full p-8 lg:p-10 bg-transparent outline-none font-mono text-sm leading-relaxed text-white/70 resize-none no-scrollbar">
+            </textarea>
+        </section>
+
+        <div class="resizer"></div>
+
+        <section class="flex-1 flex flex-col min-w-0 bg-white/[0.005]">
+            <div class="px-6 py-2 border-bottom border-white/5 text-[9px] text-[#40B5AD] font-mono tracking-widest uppercase">
+                Live Preview
             </div>
-        </footer>
+            <div
+                    v-html="previewHtml"
+                    class="markdown-body flex-1 w-full p-8 lg:p-10 overflow-y-auto no-scrollbar">
+            </div>
+        </section>
     </main>
+
+    <footer v-if="user" class="mt-3 px-4 flex justify-end">
+        <div class="text-[9px] font-mono text-white/10 tracking-[0.2em]">
+            IDENTIFIED AS: <span class="text-white/40">{{ user.login.toUpperCase() }}</span>
+        </div>
+    </footer>
 </div>
 
 <script>
@@ -146,35 +96,29 @@
                 user: null
             }
         },
+        computed: {
+            previewHtml() {
+                // 将 Markdown 转换为 HTML
+                return marked.parse(this.content || '*Nothing to preview...*');
+            }
+        },
         async mounted() {
-            // 1. 获取登录信息
             this.checkAuth();
-
-            // 2. 格式化路径并获取源码
             const normalizedPath = this.filePath.startsWith('/') ? this.filePath : '/' + this.filePath;
             try {
-                // 自动识别目录层级
                 const res = await fetch(`./content${normalizedPath}.md`);
-                if (!res.ok) throw new Error('File not found');
-                this.content = await res.text();
+                this.content = res.ok ? await res.text() : "# File Not Found\nStarting a new document...";
             } catch (e) {
-                console.warn("Path fetch failed, switching to fallback.");
-                this.content = "# New Page\n\nEdit your content here...";
+                this.content = "# Error\nCould not fetch remote content.";
             }
         },
         methods: {
             checkAuth() {
                 const raw = localStorage.getItem('gh_auth');
-                if (!raw) {
-                    alert("Unauthorized access. Please login via Wiki home.");
-                    window.location.href = 'wiki.html';
-                    return;
-                }
+                if (!raw) { window.location.href = 'wiki.html'; return; }
                 this.user = JSON.parse(raw);
             },
             async submitEdit() {
-                if (this.loading) return;
-
                 this.loading = true;
                 try {
                     const res = await fetch(`https://api.github.com/repos/MC-OpenST/Submissions/issues`, {
@@ -185,22 +129,12 @@
                         },
                         body: JSON.stringify({
                             title: `[Wiki修订] ${this.filePath}`,
-                            body: `### 🛠️ Wiki 内容修订申请\n\n- **目标路径**: \`content${this.filePath}.md\`\n- **贡献者**: @${this.user.login}\n\n#### 修订后的 Markdown 内容:\n\n\`\`\`markdown\n${this.content}\n\`\`\`\n\n--- \n*Generated by OpenST Unified Editor*`
+                            body: `### 🛠️ Wiki 修订提交\n\n- **路径**: \`content${this.filePath}.md\`\n- **作者**: @${this.user.login}\n\n#### 修订内容:\n\n\`\`\`markdown\n${this.content}\n\`\`\``
                         })
                     });
-
-                    if (res.ok) {
-                        alert('Submission Successful! Redirecting to Wiki...');
-                        window.location.href = 'wiki.html';
-                    } else {
-                        const err = await res.json();
-                        throw new Error(err.message || 'API Error');
-                    }
-                } catch (e) {
-                    alert('Submission Error: ' + e.message);
-                } finally {
-                    this.loading = false;
-                }
+                    if (res.ok) { alert('Submitted!'); window.location.href = 'wiki.html'; }
+                } catch (e) { alert('Error: ' + e.message); }
+                finally { this.loading = false; }
             }
         }
     }).mount('#editor-app');
