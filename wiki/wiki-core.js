@@ -123,7 +123,7 @@ Vue.createApp({
         },
         goToEdit() {
             const currentPath = window.location.hash.replace(/^#/, '').split('?')[0] || '/README';
-            window.location.href = `wiki/edit_wiki.html?path=${encodeURIComponent(currentPath)}`;
+            window.location.href = `wiki/wiki_edit.html?path=${encodeURIComponent(currentPath)}`;
         }
     }
 }).mount('#wiki-collab');
