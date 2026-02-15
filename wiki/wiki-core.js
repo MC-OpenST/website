@@ -8,7 +8,7 @@ Vue.createApp({
     data() {
         return {
             user: null,
-            step: 1 // 1: 正常, 2: 认证中
+            step: 1
         }
     },
     template: `
@@ -21,16 +21,13 @@ Vue.createApp({
                 </div>
                 
                 <div class="flex items-center gap-6">
-                    <div v-if="user" class="user-card flex items-center gap-3">
+                    <div v-if="user" class="user-pill flex items-center gap-3">
                         <div class="flex flex-col items-end leading-none">
-                            <span class="text-white text-[11px] font-bold">{{ user.login }}</span>
-                            <span v-if="user.isStaff" class="text-[#40B5AD] text-[9px] font-black uppercase tracking-widest mt-1">Staff</span>
+                            <span class="text-white text-[11px] font-bold tracking-tight">{{ user.login }}</span>
+                            <span v-if="user.isStaff" class="text-[#40B5AD] text-[8px] font-black uppercase tracking-widest mt-1">Staff</span>
                         </div>
-                        <img :src="user.avatar" class="w-8 h-8 rounded-lg border border-white/10">
-                        <div class="flex items-center gap-3 ml-2">
-                            <button @click="goToEdit" class="edit-portal-btn">EDIT</button>
-                            <button @click="logout" class="text-white/20 hover:text-red-400 transition text-[10px]">EXIT</button>
-                        </div>
+                        <img :src="user.avatar" class="w-8 h-8 rounded-lg border border-white/10 object-cover shadow-sm">
+                        <button @click="logout" class="ml-1 text-white/20 hover:text-red-400 transition text-[9px] font-bold">EXIT</button>
                     </div>
 
                     <button v-else @click="loginWithGitHub" :disabled="step === 2" class="github-login-btn">
@@ -39,21 +36,41 @@ Vue.createApp({
                 </div>
             </div>
         </header>
+
+        <div v-if="user" class="fab-container">
+            <div class="fab-wrapper">
+                <span class="fab-label">Modify Current</span>
+                <button @click="goToEdit('modify')" class="fab-btn">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </div>
+            <div class="fab-wrapper">
+                <span class="fab-label">Create New</span>
+                <button @click="goToEdit('new')" class="fab-btn fab-primary">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </div>
+        </div>
     </teleport>
     `,
     async mounted() {
-        // 1. 初始化检查本地存储
         this.checkLogin();
-
-        // 2. 处理 GitHub 回调 (对齐档案馆逻辑)
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-
-        if (code && this.step !== 2) {
+        const code = new URLSearchParams(window.location.search).get('code');
+        if (code && this.step !== 2) this.handleOAuth(code);
+    },
+    methods: {
+        loginWithGitHub() {
+            const redirect_uri = window.location.origin + window.location.pathname;
+            window.location.href = `https://github.com/login/oauth/authorize?client_id=${CONFIG.CLIENT_ID}&scope=public_repo&redirect_uri=${encodeURIComponent(redirect_uri)}`;
+        },
+        goToEdit(type) {
+            const currentPath = window.location.hash.replace(/^#/, '').split('?')[0] || '/README';
+            // 如果是新建，路径传一个约定的特殊标记，编辑器接收后显示空白页
+            const targetPath = type === 'new' ? '/NEW_DOCUMENT' : currentPath;
+            window.location.href = `wiki_edit.html?path=${encodeURIComponent(targetPath)}`;
+        },
+        async handleOAuth(code) {
             this.step = 2;
-
-            // 核心：清理 URL 参数，但保留 Hash (Docsify 路径)
-            // 这样登录回来后，页面依然停留在原来的文章位置
             const cleanUrl = window.location.origin + window.location.pathname + window.location.hash;
             window.history.replaceState({}, document.title, cleanUrl);
 
@@ -61,69 +78,34 @@ Vue.createApp({
                 const res = await fetch(`${CONFIG.WORKER}/api/exchange-token?code=${code}`);
                 const data = await res.json();
                 if (data.access_token) {
-                    await this.fetchUserInfo(data.access_token);
+                    const userRes = await fetch('https://api.github.com/user', { headers: { Authorization: `token ${data.access_token}` } });
+                    const userData = await userRes.json();
+                    const orgRes = await fetch(`https://api.github.com/orgs/${CONFIG.ORG_NAME}/members/${userData.login}`, { headers: { Authorization: `token ${data.access_token}` } });
+
+                    this.user = {
+                        token: data.access_token,
+                        login: userData.login,
+                        avatar: userData.avatar_url,
+                        isStaff: orgRes.status === 204,
+                        timestamp: Date.now()
+                    };
+                    localStorage.setItem('gh_auth', JSON.stringify(this.user));
                 }
-            } catch (e) {
-                console.error("Auth Error:", e);
-            } finally {
-                this.step = 1;
-            }
-        }
-    },
-    methods: {
-        loginWithGitHub() {
-            const redirect_uri = window.location.origin + window.location.pathname;
-
-            window.location.href = `https://github.com/login/oauth/authorize` +
-                `?client_id=${CONFIG.CLIENT_ID}` +
-                `&scope=public_repo` +
-                `&redirect_uri=${encodeURIComponent(redirect_uri)}`;
-        },
-        async fetchUserInfo(token) {
-            try {
-                // 获取基础信息
-                const userRes = await fetch('https://api.github.com/user', {
-                    headers: { Authorization: `token ${token}` }
-                });
-                const userData = await userRes.json();
-
-                // 检查 Staff 身份 (组织成员)
-                const orgRes = await fetch(`https://api.github.com/orgs/${CONFIG.ORG_NAME}/members/${userData.login}`, {
-                    headers: { Authorization: `token ${token}` }
-                });
-
-                const authData = {
-                    token: token,
-                    login: userData.login,
-                    avatar: userData.avatar_url,
-                    isStaff: orgRes.status === 204,
-                    timestamp: Date.now()
-                };
-
-                // 统一存储 key 名为 gh_auth
-                localStorage.setItem('gh_auth', JSON.stringify(authData));
-                this.user = authData;
-            } catch (e) {
-                console.error("Fetch User Info Failed", e);
-            }
+            } catch (e) { console.error(e); } finally { this.step = 1; }
         },
         checkLogin() {
             const raw = localStorage.getItem('gh_auth');
-            if (!raw) return;
-            try {
+            if (raw) {
                 const data = JSON.parse(raw);
-                const isExpired = (Date.now() - data.timestamp) > 7 * 24 * 60 * 60 * 1000;
-                if (isExpired) this.logout();
-                else this.user = data;
-            } catch (e) { this.logout(); }
+                if (Date.now() - data.timestamp < 7 * 24 * 60 * 60 * 1000) this.user = data;
+                else this.logout();
+            }
         },
-        logout() {
-            localStorage.removeItem('gh_auth');
-            this.user = null;
-        },
-        goToEdit() {
+        logout() { localStorage.removeItem('gh_auth'); this.user = null; },
+        goToEdit(type) {
             const currentPath = window.location.hash.replace(/^#/, '').split('?')[0] || '/README';
-            window.location.href = `wiki_edit.html?path=${encodeURIComponent(currentPath)}`;
+            const targetPath = type === 'new' ? '/NEW_POST' : currentPath;
+            window.location.href = `wiki_edit.html?path=${encodeURIComponent(targetPath)}`;
         }
     }
 }).mount('#wiki-collab');

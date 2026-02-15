@@ -132,3 +132,102 @@ section.content { padding-top: 84px !important; }
     cursor: pointer; margin-left: 10px;
 }
 .logout-btn:hover { color: #ff4d4d; }
+
+/* --- Docsify 适配修正 --- */
+/* 确保侧边栏和正文内容都在顶栏下方 */
+.sidebar {
+    padding-top: 80px !important;
+    z-index: 20 !important;
+}
+
+.sidebar-toggle {
+    top: 15px !important;
+    background: rgba(12, 12, 12, 0.7) !important;
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    z-index: 1001 !important;
+}
+
+/* --- 用户头像修正 --- */
+.user-avatar-frame {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    object-fit: cover; /* 核心：防止图片拉伸变瘪 */
+    background: #1a1a1a;
+}
+
+/* --- 右下角赛博浮动按钮 (FAB) --- */
+.fab-container {
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 2000;
+}
+
+.fab-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.fab-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(20, 20, 20, 0.8);
+    backdrop-filter: blur(10px);
+    color: rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.fab-btn.primary {
+    background: var(--brand-color);
+    color: #000;
+    border: none;
+}
+
+.fab-btn:hover {
+    transform: scale(1.1) translateY(-4px);
+    color: #fff;
+    border-color: var(--brand-color);
+}
+
+.fab-btn.primary:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 0 20px rgba(64, 181, 173, 0.3);
+}
+
+/* 标签文字样式 */
+.fab-label {
+    background: rgba(0, 0, 0, 0.6);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 8px;
+    opacity: 0;
+    transform: translateX(10px);
+    transition: 0.3s;
+    pointer-events: none;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.fab-item:hover .fab-label {
+    opacity: 1;
+    transform: translateX(0);
+}
