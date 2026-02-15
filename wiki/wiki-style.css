@@ -265,3 +265,226 @@ section.content { padding-top: 84px !important; }
 .sidebar {
     padding-top: 100px !important;
 }
+
+/* --- 7. Wiki 组件：现代深色表格 (彻底修复黑白断层) --- */
+.markdown-section table {
+    width: 100% !important;
+    border-collapse: collapse !important; /* 改为 collapse 减少缝隙感 */
+    margin: 2.5rem 0 !important;
+    background: #161617 !important; /* 强制底色，防止透出背后乱码 */
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    display: table !important; /* 确保它以表格形式渲染 */
+}
+
+/* 彻底清理 Docsify 默认的奇偶行变色 */
+.markdown-section tr,
+.markdown-section th,
+.markdown-section td {
+    background: transparent !important; /* 强制透明，统一由 table 控制底色 */
+    border: none !important;
+}
+
+/* 表头：青色背景 + 白色字体 */
+.markdown-section th {
+    background: rgba(64, 181, 173, 0.2) !important; /* 品牌色深透明 */
+    color: var(--brand-color) !important;
+    font-weight: 700 !important;
+    padding: 14px 16px !important;
+    text-align: left !important;
+    border-bottom: 2px solid rgba(64, 181, 173, 0.3) !important;
+}
+
+/* 单元格：深灰文字 + 极细分割线 */
+.markdown-section td {
+    padding: 12px 16px !important;
+    color: #ceced2 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* 鼠标悬停行：轻微提亮，增加交互感 */
+.markdown-section tr:hover {
+    background: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* 最后一行去掉底边线 */
+.markdown-section tr:last-child td {
+    border-bottom: none !important;
+}
+
+/* --- 8. Wiki 组件：引用块转为提示框 (Admonitions) --- */
+/* 当你写 > 注意：... 时，它会变得非常亮眼 */
+.markdown-section blockquote {
+    margin: 2rem 0 !important;
+    padding: 1.2rem 1.5rem !important;
+    background: linear-gradient(to right, rgba(64, 181, 173, 0.08), transparent) !important;
+    border-left: 4px solid var(--brand-color) !important;
+    border-radius: 8px !important;
+    color: #eee !important;
+}
+
+.markdown-section blockquote p {
+    margin: 0 !important;
+    font-weight: 500 !important;
+    font-style: normal !important; /* Wiki 不需要斜体引用 */
+}
+
+/* --- 9. Wiki 组件：代码块美化 --- */
+/* 行内代码块 `code` */
+.markdown-section :not(pre) > code {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: var(--brand-color) !important;
+    padding: 2px 6px !important;
+    border-radius: 6px !important;
+    font-family: "JetBrains Mono", monospace !important;
+    font-size: 0.9em !important;
+}
+
+/* 多行代码块 ```code``` */
+.markdown-section pre {
+    background: #121212 !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    padding: 1.5rem !important;
+    border-radius: 16px !important;
+    position: relative !important;
+}
+
+.markdown-section pre code {
+    font-family: "JetBrains Mono", monospace !important;
+    line-height: 1.6 !important;
+    font-size: 14px !important;
+}
+
+/* --- 10. 交互增强：超链接动画 --- */
+.markdown-section a:not(.anchor) {
+    color: var(--brand-color) !important;
+    text-decoration: none !important;
+    border-bottom: 1px solid rgba(64, 181, 173, 0.3) !important;
+    transition: all 0.3s ease !important;
+    padding-bottom: 1px !important;
+}
+
+.markdown-section a:not(.anchor):hover {
+    border-bottom-color: var(--brand-color) !important;
+    background: rgba(64, 181, 173, 0.1) !important;
+}
+
+/* --- 11. 细节处理：水平分割线 --- */
+.markdown-section hr {
+    border: none !important;
+    height: 1px !important;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent) !important;
+    margin: 3rem 0 !important;
+}
+
+/* --- 12. 图片高级感修正 --- */
+.markdown-section img {
+    border-radius: 16px !important;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4) !important;
+    margin: 2.5rem auto !important;
+    display: block !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* --- 13. 列表 (UL/OL) 深度修复：隔离绘制 --- */
+
+/* 容器基础间距 */
+.markdown-section ul,
+.markdown-section ol {
+    padding-left: 1.8rem !important;
+    list-style: none !important;
+    margin: 1.2rem 0 !important;
+}
+
+/* --- 无序列表专属：只给 ul 下的直接 li 加圆点 --- */
+.markdown-section ul > li {
+    position: relative !important;
+}
+
+.markdown-section ul > li::before {
+    content: "" !important;
+    position: absolute !important;
+    left: -1.2rem !important;
+    top: 0.7em !important;
+    width: 6px !important;
+    height: 6px !important;
+    background-color: var(--brand-color) !important;
+    border-radius: 50% !important;
+    transform: translateY(-50%) !important;
+}
+
+/* --- 有序列表专属：只给 ol 下的直接 li 加数字 --- */
+.markdown-section ol {
+    counter-reset: wiki-counter !important;
+}
+
+.markdown-section ol > li {
+    position: relative !important;
+    counter-increment: wiki-counter !important;
+}
+
+/* 核心修复：清除可能从 ul 继承来的圆点 */
+.markdown-section ol > li::before {
+    background: none !important; /* 强制干掉圆点背景 */
+    width: auto !important;
+    height: auto !important;
+
+    /* 注入数字 */
+    content: counter(wiki-counter) "." !important;
+    position: absolute !important;
+    left: -1.5rem !important;
+    top: 0 !important;
+    color: var(--brand-color) !important;
+    font-weight: 600 !important;
+    font-size: 0.9em !important;
+    transform: none !important;
+}
+
+/* --- 14. 语义化代码块 (Code Block) 增强 --- */
+.markdown-section pre {
+    background: rgba(20, 20, 20, 0.8) !important; /* 更深的背景 */
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding: 1.5rem !important;
+    border-radius: 16px !important;
+    margin: 2rem 0 !important;
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.05); /* 增加顶部微光边缘 */
+    position: relative;
+    overflow: hidden;
+}
+
+/* 在代码块右上角虚构一个语言标识（增强视觉） */
+.markdown-section pre::before {
+    content: "CODE";
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 4px 12px;
+    font-size: 10px;
+    font-weight: 800;
+    color: rgba(255,255,255,0.2);
+    letter-spacing: 0.1em;
+    background: rgba(255,255,255,0.03);
+    border-bottom-left-radius: 8px;
+}
+
+.markdown-section pre code {
+    color: #e1e1e6 !important; /* 亮灰色文字 */
+    font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+    text-shadow: none !important; /* 清除可能存在的阴影 */
+}
+
+/* --- 15. 图片下方文字 (Caption) 模拟 --- */
+/* 如果图片紧跟一个换行，让它看起来像注释 */
+.markdown-section img + br + em,
+.markdown-section img + p {
+    display: block;
+    text-align: center;
+    font-size: 13px !important;
+    color: #666 !important;
+    margin-top: -1rem !important;
+    margin-bottom: 2rem !important;
+}
