@@ -191,8 +191,11 @@ const AppOptions = {
             } catch (e) { console.error("Admin check failed", e); }
         },
         logout() {
+            this.user = null;
+            this.isAdmin = false;
             this.userToken = '';
-            localStorage.removeItem('gh_auth');
+            PortalAuth.logout();
+            window.location.reload();
         },
 
         // UI 交互方法
