@@ -477,6 +477,38 @@ section.content { padding-top: 84px !important; }
     text-shadow: none !important; /* 清除可能存在的阴影 */
 }
 
+/* --- 强制覆盖 docsify-themeable 的代码块颜色 --- */
+:root {
+    /* 基础背景与边框 */
+    --code-theme-background: #121212;
+    --code-theme-text: #e1e1e6;
+
+    /* 语法高亮变量 - 注入 OpenST 品牌色 */
+    --code-theme-token-constant: var(--brand-color); /* 数字、常量 */
+    --code-theme-token-function: #d2a8ff;            /* 函数 */
+    --code-theme-token-keyword: #ff7b72;             /* 关键字 */
+    --code-theme-token-string: #a5d6ff;              /* 字符串 */
+    --code-theme-token-comment: #6a737d;             /* 注释 */
+}
+
+/* 确保 Prism 的 Token 级别足够高 */
+.markdown-section .token.number,
+.markdown-section .token.constant,
+.markdown-section .token.boolean {
+    color: var(--brand-color) !important;
+    font-weight: 600;
+}
+
+.markdown-section .token.string,
+.markdown-section .token.attr-value {
+    color: #a5d6ff !important;
+}
+
+.markdown-section .token.keyword {
+    color: #ff7b72 !important;
+    font-weight: bold;
+}
+
 /* --- 15. 图片下方文字 (Caption) 模拟 --- */
 /* 如果图片紧跟一个换行，让它看起来像注释 */
 .markdown-section img + br + em,
@@ -487,4 +519,66 @@ section.content { padding-top: 84px !important; }
     color: #666 !important;
     margin-top: -1rem !important;
     margin-bottom: 2rem !important;
+}
+
+/* --- 终极代码高亮权重夺回 --- */
+
+/* 1. 强制重置代码块基础颜色 */
+.markdown-section pre code {
+    color: #e1e1e6 !important;
+    text-shadow: none !important;
+}
+
+/* 2. 针对 Prism 核心 Token 进行高强度覆盖 */
+.markdown-section pre code .token.keyword,
+.markdown-section pre code .token.operator,
+.markdown-section pre code .token.important {
+    color: #ff7b72 !important; /* 红色/粉色关键字 */
+    font-weight: 700 !important;
+}
+
+.markdown-section pre code .token.function,
+.markdown-section pre code .token.class-name {
+    color: #d2a8ff !important; /* 紫色函数名 */
+}
+
+.markdown-section pre code .token.string,
+.markdown-section pre code .token.char,
+.markdown-section pre code .token.attr-value {
+    color: #a5d6ff !important; /* 蓝色字符串 */
+}
+
+.markdown-section pre code .token.number,
+.markdown-section pre code .token.boolean,
+.markdown-section pre code .token.constant,
+.markdown-section pre code .token.property,
+.markdown-section pre code .token.regex {
+    color: var(--brand-color) !important; /* 品牌青色：数字、属性 */
+    font-weight: 600 !important;
+}
+
+.markdown-section pre code .token.comment,
+.markdown-section pre code .token.prolog,
+.markdown-section pre code .token.doctype,
+.markdown-section pre code .token.cdata {
+    color: #6a737d !important; /* 灰色注释 */
+    font-style: italic !important;
+}
+
+/* 3. 修复代码块右上角语言标签的显示问题 */
+/* 将之前的 pre::before 升级，确保它能读取到 data-lang */
+.markdown-section pre[data-lang]::before {
+    content: attr(data-lang) !important;
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    background: rgba(64, 181, 173, 0.2) !important;
+    color: var(--brand-color) !important;
+    padding: 2px 10px !important;
+    font-size: 10px !important;
+    font-weight: 900 !important;
+    text-transform: uppercase !important;
+    border-bottom-left-radius: 10px !important;
+    z-index: 10 !important;
+    pointer-events: none !important;
 }

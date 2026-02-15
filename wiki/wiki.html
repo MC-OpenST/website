@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple.css">
+    <script src="//cdn.jsdelivr.net/npm/prismjs@1/prism.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-python.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-yaml.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
     <link rel="stylesheet" href="wiki-style.css">
 
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
@@ -43,16 +47,11 @@
 <div class="soft-bg"></div>
 
 <div id="app">Loading Wiki...</div>
-
 <div id="wiki-collab"></div>
 
 <script>
-    // Docsify 配置
     window.$docsify = {
-        // 将 name 设为空，或者设为你的 Vue 模板中 Logo 对应的 HTML
-        // 这样侧边栏顶部就不会多出一个多余的、样式不对的文本
         name: 'OpenST Wiki',
-
         basePath: '/wiki/content/',
         relativePath: true,
         loadSidebar: true,
@@ -67,14 +66,14 @@
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/docsify@4"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/js/docsify-themeable.min.js"></script>
 
-<script src="wiki-core.js" type="module"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/prism.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-yaml.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
 
-<script>
-    window.onerror = function(msg, url, line) {
-        console.error("Wiki Error Log: ", msg, " at ", url, ":", line);
-    };
-</script>
+<script src="wiki-core.js" type="module"></script>
 </body>
 </html>
