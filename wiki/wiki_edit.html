@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Wiki - OpenST</title>
+    <link rel="stylesheet" href="wiki-style.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+</head>
+<body class="bg-[#0c0c0c] text-white overflow-hidden">
+<div id="editor-app" class="h-screen flex flex-col p-6">
+    <div class="flex justify-between items-center mb-6 px-4">
+        <div class="flex items-center gap-4">
+            <a href="index.html" class="text-white/40 hover:text-white transition">← BACK</a>
+            <h1 class="font-mono text-sm tracking-widest text-white/60 uppercase">Editing: {{ filePath }}</h1>
+        </div>
+        <button @click="submitEdit" :disabled="loading" class="edit-portal-btn">
+            {{ loading ? 'SYNCING...' : 'COMMIT CHANGES' }}
+        </button>
+    </div>
+
+    <div class="flex-1 rounded-[32px] overflow-hidden border border-white/5 bg-white/[0.02]">
+            <textarea v-model="content" spellcheck="false"
+                      class="w-full h-full p-12 bg-transparent outline-none font-mono text-sm leading-relaxed text-[#d1d1d6] resize-none"></textarea>
+    </div>
+</div>
+
+<script>
+    const { createApp } = Vue;
+    createApp({
+        data() {
+            return {
+                filePath: new URLSearchParams(window.location.search).get('path') || '/README',
+                content: '',
+                loading: false,
+                user: JSON.parse(localStorage.getItem('gh_auth'))
+            }
+        },
+        async mounted() {
+            if (!this.user) { window.location.href = 'index.html'; return; }
+            const res = await fetch(`content${this.filePath}.md`);
+            this.content = await res.text();
+        },
+        methods: {
+            async submitEdit() {
+                this.loading = true;
+                try {
+                    const res = await fetch(`https://api.github.com/repos/MC-OpenST/Submissions/issues`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `token ${this.user.token}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        },
+                        body: JSON.stringify({
+                            title: `[Wiki修订] ${this.filePath}`,
+                            body: `### 修订内容\n\n\`\`\`markdown\n${this.content}\n\`\`\``
+                        })
+                    });
+                    if (res.ok) { alert('提交成功！'); window.location.href = 'index.html'; }
+                } catch (e) { alert('提交失败'); }
+                this.loading = false;
+            }
+        }
+    }).mount('#editor-app');
+</script>
+</body>
+</html>

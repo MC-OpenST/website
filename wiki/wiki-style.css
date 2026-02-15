@@ -1,30 +1,134 @@
-/* 彻底隐藏 Docsify 原生 UI 元素 */
-.sidebar, .sidebar-toggle, .gh-corner { display: none !important; }
+:root {
+    --brand-color: #40B5AD;
+    --base-background-color: #0c0c0c;
+    --content-background: rgba(255, 255, 255, 0.02);
+    --base-font-family: -apple-system, "SF Pro Display", "PingFang SC", sans-serif;
+    --base-color: #a1a1a6;
+    --heading-color: #f5f5f7;
+    --sidebar-background: #0c0c0c;
+    --sidebar-nav-link-color: #666;
+    --sidebar-nav-link-color--active: var(--brand-color);
+    --content-max-width: 60em;
+    --content-padding: 4rem;
+}
 
-/* Docsify 内容区适配 Tailwind 布局 */
-#app { width: auto !important; }
-.markdown-section {
-    max-width: 900px !important;
-    padding: 2rem 40px !important;
-    margin: 0 auto !important;
+/* 全局与背景 */
+body {
+    background: radial-gradient(circle at center, #151515 0%, #0c0c0c 100%) fixed !important;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+}
+
+.soft-bg {
+    position: fixed; inset: 0;
+    background: radial-gradient(circle at 20% 30%, rgba(64, 181, 173, 0.03) 0%, transparent 50%);
+    z-index: -1;
+}
+
+/* 顶栏设计 */
+.top-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 64px;
+    z-index: 1000;
+    background: rgba(12, 12, 12, 0.6);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex; align-items: center;
+}
+
+.bar-content {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 40px;
+    display: flex; justify-content: space-between; align-items: center;
+}
+
+.logo {
+    display: flex; align-items: center; gap: 12px;
+    font-weight: 700; font-size: 13px; letter-spacing: 0.2em; color: #fff;
+}
+
+.logo-dot {
+    width: 8px; height: 8px; background: var(--brand-color);
+    border-radius: 2px; transform: rotate(45deg);
+}
+
+.bar-actions { display: flex; align-items: center; gap: 32px; }
+
+.top-nav { display: flex; gap: 24px; }
+.top-nav a {
+    text-decoration: none; color: rgba(255, 255, 255, 0.3);
+    font-size: 10px; font-weight: 600; letter-spacing: 0.1em; transition: 0.3s;
+}
+.top-nav a:hover { color: var(--brand-color); }
+
+/* 状态灯 */
+.status-indicator {
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer; padding: 6px 14px; border-radius: 20px;
+    background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: 0.3s;
+}
+.status-indicator:hover { background: rgba(255, 255, 255, 0.08); }
+.status-label { font-size: 9px; font-weight: 700; color: rgba(255, 255, 255, 0.4); letter-spacing: 0.1em; }
+
+.breath-light { width: 6px; height: 6px; border-radius: 50%; transition: 1s; }
+.breath-light.inactive { background: rgba(255, 255, 255, 0.2); }
+.breath-light.active {
+    background: var(--brand-color);
+    box-shadow: 0 0 12px var(--brand-color);
+    animation: breath 4s infinite ease-in-out;
+}
+
+@keyframes breath {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.3); opacity: 1; }
+}
+
+/* Docsify 内容调整 */
+section.content { padding-top: 84px !important; }
+.sidebar {
+    padding-top: 84px !important;
+    border-right: none !important;
     background: transparent !important;
-    color: #a0a0a0 !important;
-    line-height: 1.8 !important;
 }
 
-/* 科技感标题 */
-.markdown-section h1 { @apply text-4xl font-black text-white mb-8 tracking-tighter; }
-.markdown-section h2 { @apply text-xl font-bold text-white mt-12 mb-4 pb-2 border-b border-white/5; }
+.markdown-section {
+    background: var(--content-background) !important;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 28px;
+    padding: var(--content-padding) !important;
+    margin: 40px auto 100px auto !important;
+    transition: 0.6s cubic-bezier(0.15, 0.8, 0.2, 1);
+}
+.markdown-section:hover { border-color: rgba(64, 181, 173, 0.15); }
 
-/* 代码块美化 */
-pre {
-    background: #0a0a0a !important;
-    border: 1px solid rgba(255,255,255,0.05) !important;
-    border-radius: 20px !important;
-    padding: 1.5rem !important;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+/* 编辑器 Modal */
+.editor-modal {
+    background: rgba(15, 15, 15, 0.85);
+    backdrop-filter: blur(30px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
-code {
-    font-family: 'Fira Code', monospace !important;
-    @apply text-[#40B5AD] bg-[#40B5AD]/10 px-1.5 py-0.5 rounded-md text-sm;
+
+.github-login-btn {
+    background: #fff; color: #000; font-size: 10px; font-weight: 800;
+    padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer;
+    transition: 0.3s; letter-spacing: 0.1em;
 }
+
+.edit-portal-btn {
+    background: var(--brand-color); color: #000; font-size: 10px; font-weight: 800;
+    padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(64, 181, 173, 0.3); transition: 0.3s;
+}
+
+.edit-portal-btn:hover { transform: translateY(-2px); brightness: 1.1; }
+
+.logout-btn {
+    font-size: 8px; color: rgba(255,255,255,0.2); background: none; border: none;
+    cursor: pointer; margin-left: 10px;
+}
+.logout-btn:hover { color: #ff4d4d; }
