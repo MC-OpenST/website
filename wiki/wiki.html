@@ -4,9 +4,18 @@
     <meta charset="UTF-8">
     <title>OpenST Wiki</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple.css">
     <link rel="stylesheet" href="wiki-style.css">
+
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+    <style>
+        #wiki-collab {
+            position: relative;
+            z-index: 9999;
+        }
+    </style>
 </head>
 <body>
 <div class="soft-bg"></div>
@@ -16,9 +25,11 @@
 <div id="wiki-collab"></div>
 
 <script>
+    // Docsify 配置
     window.$docsify = {
         name: 'OpenST Wiki',
-        basePath: './content/',
+        basePath: 'content/',
+        relativePath: true,
         loadSidebar: true,
         auto2top: true,
         themeable: {
@@ -27,8 +38,16 @@
         }
     };
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/docsify@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/js/docsify-themeable.min.js"></script>
+
 <script src="wiki-core.js"></script>
+
+<script>
+    window.onerror = function(msg, url, line) {
+        console.error("Wiki Error Log: ", msg, " at ", url, ":", line);
+    };
+</script>
 </body>
 </html>
