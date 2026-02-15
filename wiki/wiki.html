@@ -53,20 +53,15 @@
         // 这样侧边栏顶部就不会多出一个多余的、样式不对的文本
         name: '',
 
-        basePath: '/content/',
+        basePath: 'wiki/content/',
         relativePath: true,
         loadSidebar: true,
         auto2top: true,
-
-        // 加上这一行，可以确保侧边栏在切换时更顺滑
         mergeNavbar: true,
-
         themeable: {
             readyTransition: true,
             responsiveTables: true
         },
-
-        // 配合我们加粗的字体，调整 Docsify 的渲染逻辑
         executeScript: true
     };
 </script>
