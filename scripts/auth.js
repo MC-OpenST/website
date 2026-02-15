@@ -1,3 +1,4 @@
+// auth.js
 // 管理认证状态
 export const PortalAuth = {
     save(data) {

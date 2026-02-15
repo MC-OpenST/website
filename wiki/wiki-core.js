@@ -1,4 +1,6 @@
 // wiki-core.js
+import { PortalAuth } from '../scripts/auth.js';
+
 const CONFIG = {
     WORKER: "https://openstsubmission.linvin.net",
     CLIENT_ID: 'Ov23liTildfj3XAkvbr8',
@@ -66,8 +68,9 @@ Vue.createApp({
     },
     methods: {
         loginWithGitHub() {
-            const redirect_uri = window.location.origin + window.location.pathname;
-            window.location.href = `https://github.com/login/oauth/authorize?client_id=${CONFIG.CLIENT_ID}&scope=read:org,repo&redirect_uri=${encodeURIComponent(redirect_uri)}`;
+            const state = btoa(window.location.href);
+            const CLIENT_ID = CONFIG.CLIENT_ID;
+            window.location.href = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=read:org,repo&state=${state}`;
         },
         goToEdit(type) {
             const currentPath = window.location.hash.replace(/^#/, '').split('?')[0] || '/README';
@@ -121,13 +124,15 @@ Vue.createApp({
             }
         },
         checkLogin() {
-            const raw = localStorage.getItem('gh_auth');
-            if (raw) {
-                const data = JSON.parse(raw);
-                if (Date.now() - data.timestamp < 7 * 24 * 60 * 60 * 1000) this.user = data;
-                else this.logout();
+            // 直接调用 PortalAuth 模块的方法
+            const auth = PortalAuth.get();
+            if (auth && auth.user) {
+                this.user = auth.user;
+                this.isAdmin = auth.isAdmin;
             }
         },
-        logout() { localStorage.removeItem('gh_auth'); this.user = null; },
+        logout() {
+            PortalAuth.logout();
+        }
     }
 }).mount('#wiki-collab');
