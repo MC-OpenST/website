@@ -114,32 +114,36 @@
 <script>
     const { createApp } = Vue;
     const WORKER_URL = "https://openstsubmission.linvin.net";
+    // 定义 Wiki 内容的物理根目录，方便统一维护
+    const WIKI_BASE = "/wiki/contents";
 
     createApp({
         data() {
-            const pathParam = new URLSearchParams(window.location.search).get('path');
+            // 获取路径参数，默认为 /README
+            let pathParam = new URLSearchParams(window.location.search).get('path') || '/README';
+            // 如果只有斜杠，自动补全为 /README
+            if (pathParam === '/') pathParam = '/README';
+
             return {
-                filePath: pathParam || '/README',
+                filePath: pathParam, // 逻辑路径，如 "/README" 或 "/coding"
                 isNewFile: pathParam === '/NEW_DOCUMENT',
                 newFileName: '',
                 content: '',
                 loading: false,
                 user: null,
+                token: null,
                 imageFiles: [],
-                imageMap: {} // 存储文件名到 Blob URL 的映射
+                imageMap: {}
             }
         },
         computed: {
             previewHtml() {
                 let raw = this.content || '*Waiting for input...*';
-
-                // 本地图片实时预览算法
-                // 将 ![alt](filename) 替换为 ![alt](blob:...)
+                // 实时预览：将本地引用的图片名替换为 Blob URL
                 const processed = raw.replace(/!\[(.*?)\]\((?!http)(.*?)\)/g, (match, alt, filename) => {
                     const localBlob = this.imageMap[filename];
                     return localBlob ? `![${alt}](${localBlob})` : match;
                 });
-
                 return marked.parse(processed);
             }
         },
@@ -147,12 +151,19 @@
             this.checkAuth();
             if (!this.isNewFile) {
                 this.loading = true;
+                // 修正获取路径：逻辑路径 -> 物理路径
+                // 例如：/README -> ./wiki/contents/README.md
                 const normalizedPath = this.filePath.startsWith('/') ? this.filePath : '/' + this.filePath;
+                const targetUrl = `.${WIKI_BASE}${normalizedPath}.md`;
+
                 try {
-                    const res = await fetch(`./content${normalizedPath}.md`);
-                    this.content = res.ok ? await res.text() : "# New Document\nStart here...";
-                } catch (e) { this.content = "# Error fetching content"; }
-                finally { this.loading = false; }
+                    const res = await fetch(targetUrl);
+                    this.content = res.ok ? await res.text() : "# File Not Found\nStarting a new document...";
+                } catch (e) {
+                    this.content = "# Error\nCould not fetch remote content from " + targetUrl;
+                } finally {
+                    this.loading = false;
+                }
             }
         },
         methods: {
@@ -167,12 +178,8 @@
             handleImageSelect(e) {
                 const files = Array.from(e.target.files);
                 this.imageFiles = files;
-
-                // 释放旧的内存
                 Object.values(this.imageMap).forEach(URL.revokeObjectURL);
                 this.imageMap = {};
-
-                // 创建新的映射
                 files.forEach(file => {
                     this.imageMap[file.name] = URL.createObjectURL(file);
                 });
@@ -183,9 +190,9 @@
             },
 
             async submitEdit() {
-                // 1. 确定文件夹和文件名
+                // 1. 确定最终的文章名称 (baseName)
                 let baseName = this.isNewFile
-                    ? this.newFileName.trim().replace(/[^a-zA-Z0-9-_]/g, '-')
+                    ? this.newFileName.trim().replace(/[^a-zA-Z0-9-_\u4e00-\u9fa5]/g, '-')
                     : this.filePath.replace(/^\//, '').replace('.md', '');
 
                 if (!baseName) return alert("Please specify a valid filename.");
@@ -193,21 +200,26 @@
                 this.loading = true;
 
                 try {
-                    // 2. JSZip 分层打包
+                    // 2. JSZip 打包：按照“文稿文件夹 = 图片文件夹”的标准化结构
                     const zip = new JSZip();
-                    const folder = zip.folder(baseName); // 创建同名文件夹
+                    // 创建同名文件夹，例如：coding/
+                    const folder = zip.folder(baseName);
 
-                    folder.file(`${baseName}.md`, this.content); // 放入 MD
-                    this.imageFiles.forEach(f => folder.file(f.name, f)); // 放入图片
+                    // 放入文稿：coding/coding.md
+                    folder.file(`${baseName}.md`, this.content);
+                    // 放入所有关联图片：coding/pic1.png
+                    this.imageFiles.forEach(f => folder.file(f.name, f));
 
                     const zipBlob = await zip.generateAsync({ type: "blob" });
                     const zipFileName = `${this.isNewFile ? 'wiki-submission' : 'wiki-modify'}-${baseName}.zip`;
 
-                    // 3. FormData 喷射至 Worker
+                    // 3. 构建 FormData 并告知 Worker 物理路径
                     const fd = new FormData();
                     fd.append('file', zipBlob, zipFileName);
                     fd.append('user', this.user.login);
-                    fd.append('path', baseName);
+                    // 核心修改：明确告知管理员应该把这个文件夹解压到哪里
+                    const targetDir = `${WIKI_BASE}/${baseName}`;
+                    fd.append('path', targetDir);
                     fd.append('title', `[Wiki ${this.isNewFile ? '新建' : '修订'}] ${baseName}`);
 
                     const res = await fetch(`${WORKER_URL}/api/wiki/submit-archive`, {
@@ -219,7 +231,7 @@
                     if (res.ok) {
                         const data = await res.json();
                         alert(`🎉 Success! Issue #${data.issueNumber} created.`);
-                        window.location.href = `https://github.com/MC-OpenST/website/issues/${data.issueNumber}`;
+                        window.location.href = data.issueUrl || `https://github.com/MC-OpenST/website/issues/${data.issueNumber}`;
                     } else {
                         throw new Error(await res.text());
                     }
