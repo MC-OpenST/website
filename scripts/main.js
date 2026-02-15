@@ -222,50 +222,63 @@ const AppOptions = {
     },
 
     async mounted() {
-        // 1. 处理登录回调
+        // 1. 优先处理登录回调
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
+
         if (code) {
-            const res = await fetch(`${WORKER_URL}/api/exchange-token?code=${code}`);
-            const data = await res.json();
-            if (data.access_token) {
-                // 第二个参数传 true
-                await PortalAuth.save(data, true);
-                window.history.replaceState({}, document.title, window.location.pathname);
-                // 重新触发身份校验以更新 UI
-                await this.checkIdentity();
-            }
+            try {
+                const res = await fetch(`${WORKER_URL}/api/exchange-token?code=${code}`);
+                const data = await res.json();
+                if (data.access_token) {
+                    // 注意：这里必须 await，确保头像数据抓完存好
+                    await PortalAuth.save(data, true);
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            } catch (e) { console.error("Auth Callback Error", e); }
         }
 
-        // 2. 身份校验
+        // 2. 统一身份校验
         await this.checkIdentity();
 
-        // 3. 数据并行加载
+        // 3. 数据并行加载 (路径改回原版的 ./ 确保文件能找到)
         try {
             const [dataRes, dictRes] = await Promise.all([
-                fetch('./data/database.json'),
-                fetch('./Traditional-Simplefild/STCharacters.txt')
+                fetch('./data/database.json'), // 还原为 ./
+                fetch('./Traditional-Simplefild/STCharacters.txt') // 还原为 ./
             ]);
 
-            // 解析字典 (繁简搜索回归)
+            // 解析字典
             const dictText = await dictRes.text();
-            const fs = [], ft = [];
+
+            // 确保定义了变量
+            const fs = [];
+            const ft = [];
+
             dictText.split(/\r?\n/).forEach(line => {
                 if (!line || line.startsWith('#')) return;
                 const parts = line.trim().split(/\s+/);
-                if (parts.length >= 2) parts.slice(1).forEach(t => { fs.push(parts[0]); ft.push(t); });
+                if (parts.length >= 2) {
+                    parts.slice(1).forEach(t => {
+                        fs.push(parts[0]);
+                        ft.push(t);
+                    });
+                }
             });
+
             this.dictSArray = Object.freeze(fs);
             this.dictTArray = Object.freeze(ft);
 
-            // 装载数据库
+            // 装载数据库 (这行没跑通，投影就不会出来)
             const rawData = await dataRes.json();
             this.allData = Object.freeze(rawData);
 
-            // 数据准备好后，立即检测 URL 定位
+            // 4. 数据加载完后再执行 URL 定位
             this.checkUrlLocation();
 
-        } catch (e) { console.error("Data Load Error", e); }
+        } catch (e) {
+            console.error("Data Load Error: 检查文件路径是否正确", e);
+        }
 
         window.addEventListener('popstate', () => {
             // 当点击浏览器返回键时，重新检测 URL 决定是否显示弹窗
