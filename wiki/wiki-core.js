@@ -20,7 +20,7 @@ Vue.createApp({
         <div class="bar-content">
             <div class="logo">
                 <div class="logo-dot"></div>
-                <span class="logo-text"></span>
+                <span class="logo-text">OPENST_WIKI</span>
             </div>
             
             <div class="flex items-center gap-6">
@@ -40,7 +40,7 @@ Vue.createApp({
         </div>
     </header>
 
-    <div v-if="user" class="fab-container">
+    <div v-if="user && user.isStaff" class="fab-container">
         <div class="fab-item">
             <span class="fab-label font-black">Modify Current</span>
             <button @click="goToEdit('modify')" class="fab-btn">
@@ -64,7 +64,7 @@ Vue.createApp({
     async mounted() {
         this.checkLogin();
         const code = new URLSearchParams(window.location.search).get('code');
-        if (code && this.step !== 2) this.handleOAuth(code);
+        if (code && this.step !== 2) await this.handleOAuth(code);
     },
     methods: {
         loginWithGitHub() {
@@ -72,14 +72,9 @@ Vue.createApp({
             const CLIENT_ID = CONFIG.CLIENT_ID;
             window.location.href = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=read:org,repo&state=${state}`;
         },
-        goToEdit(type) {
-            const currentPath = window.location.hash.replace(/^#/, '').split('?')[0] || '/README';
-            // 如果是新建，路径传一个约定的特殊标记，编辑器接收后显示空白页
-            const targetPath = type === 'new' ? '/NEW_DOCUMENT' : currentPath;
-            window.location.href = `wiki_edit.html?path=${encodeURIComponent(targetPath)}`;
-        },
+
         async handleOAuth(code) {
-            this.step = 2; // 进入 IDENTIFYING 状态
+            this.step = 2;
             const cleanUrl = window.location.origin + window.location.pathname + window.location.hash;
             window.history.replaceState({}, document.title, cleanUrl);
 
@@ -88,51 +83,53 @@ Vue.createApp({
                 const data = await res.json();
 
                 if (data.access_token) {
-                    // 1. 获取基础用户信息
                     const userRes = await fetch('https://api.github.com/user', {
                         headers: { Authorization: `token ${data.access_token}` }
                     });
                     const userData = await userRes.json();
 
-                    // 2. 档案馆经典逻辑：检查组织成员身份
-                    // 注意：这里调用的 members 接口在 read:org 权限下对私有成员也有效
                     const orgRes = await fetch(`https://api.github.com/orgs/${CONFIG.ORG_NAME}/members/${userData.login}`, {
                         headers: { Authorization: `token ${data.access_token}` }
                     });
 
-                    // 204 = 是成员; 404 = 不是成员
-                    if (orgRes.status !== 204) {
-                        alert(`身份受限：您不是 ${CONFIG.ORG_NAME} 组织的成员，或未公开您的成员身份。`);
-                    }
+                    const isStaff = orgRes.status === 204;
 
-                    this.user = {
-                        token: data.access_token,
-                        login: userData.login,
-                        avatar: userData.avatar_url,
-                        isStaff: orgRes.status === 204,
-                        timestamp: Date.now()
-                    };
-                    localStorage.setItem('gh_auth', JSON.stringify(this.user));
-                } else {
-                    throw new Error("Token exchange failed");
+                    PortalAuth.save({
+                        access_token: data.access_token,
+                        user: {
+                            login: userData.login,
+                            avatar: userData.avatar_url, // 对齐：将 _url 后缀去掉
+                            isStaff: isStaff
+                        }
+                    });
+
+                    this.checkLogin(); // 刷新本地 data 状态
                 }
             } catch (e) {
                 console.error("Auth Error:", e);
-                alert("登录失败，请检查网络连接或 GitHub 授权状态。");
+                alert("Auth Failed. Please try again.");
             } finally {
                 this.step = 1;
             }
         },
+
         checkLogin() {
-            // 直接调用 PortalAuth 模块的方法
             const auth = PortalAuth.get();
+            // 这里根据 PortalAuth.save 的结构读取
             if (auth && auth.user) {
                 this.user = auth.user;
-                this.isAdmin = auth.isAdmin;
             }
         },
+
         logout() {
             PortalAuth.logout();
+            this.user = null;
+        },
+
+        goToEdit(type) {
+            const currentPath = window.location.hash.replace(/^#/, '').split('?')[0] || '/README';
+            const targetPath = type === 'new' ? '/NEW_DOCUMENT' : currentPath;
+            window.location.href = `wiki_edit.html?path=${encodeURIComponent(targetPath)}`;
         }
     }
 }).mount('#wiki-collab');
