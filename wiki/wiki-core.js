@@ -1,4 +1,4 @@
-// wiki-core.js
+// wiki/wiki-core.js
 import { PortalAuth } from '../scripts/auth.js';
 
 const CONFIG = {
@@ -22,7 +22,6 @@ Vue.createApp({
                 <div class="logo-dot"></div>
                 <span class="logo-text">OPENST_WIKI</span>
             </div>
-            
             <div class="flex items-center gap-6">
                 <div v-if="user" class="status-indicator">
                     <div class="flex flex-col items-end leading-none mr-1">
@@ -32,7 +31,6 @@ Vue.createApp({
                     <img :src="user.avatar" class="user-avatar-frame">
                     <button @click="logout" class="logout-btn font-black uppercase tracking-tighter">Exit</button>
                 </div>
-
                 <button v-else @click="loginWithGitHub" :disabled="step === 2" class="github-login-btn">
                     <span class="font-black">{{ step === 2 ? 'IDENTIFYING...' : 'GITHUB LOGIN' }}</span>
                 </button>
@@ -40,7 +38,7 @@ Vue.createApp({
         </div>
     </header>
 
-    <div v-if="user && user.isStaff" class="fab-container">
+    <div v-if="user" class="fab-container">
         <div class="fab-item">
             <span class="fab-label font-black">Modify Current</span>
             <button @click="goToEdit('modify')" class="fab-btn">
@@ -49,7 +47,6 @@ Vue.createApp({
                 </svg>
             </button>
         </div>
-        
         <div class="fab-item">
             <span class="fab-label font-black">Create New</span>
             <button @click="goToEdit('new')" class="fab-btn primary">
@@ -68,75 +65,36 @@ Vue.createApp({
     },
     methods: {
         loginWithGitHub() {
-            // 1. 获取当前页面的纯净地址 (不带 # 或 ?)
             const redirect_uri = window.location.origin + window.location.pathname;
-
-            // 2. 将当前完整状态（包含 hash 路由）编码进 state
             const state = btoa(window.location.href);
-
-            const CLIENT_ID = CONFIG.CLIENT_ID;
-
-            // 3. 构建完整的 OAuth 跳转 URL
-            window.location.href = `https://github.com/login/oauth/authorize` +
-                `?client_id=${CLIENT_ID}` +
-                `&scope=read:org,repo` +
-                `&state=${state}` +
-                `&redirect_uri=${encodeURIComponent(redirect_uri)}`;
+            window.location.href = `https://github.com/login/oauth/authorize?client_id=${CONFIG.CLIENT_ID}&scope=read:org,repo&state=${state}&redirect_uri=${encodeURIComponent(redirect_uri)}`;
         },
-
         async handleOAuth(code) {
             this.step = 2;
             const cleanUrl = window.location.origin + window.location.pathname + window.location.hash;
             window.history.replaceState({}, document.title, cleanUrl);
-
             try {
                 const res = await fetch(`${CONFIG.WORKER}/api/exchange-token?code=${code}`);
                 const data = await res.json();
-
                 if (data.access_token) {
-                    const userRes = await fetch('https://api.github.com/user', {
-                        headers: { Authorization: `token ${data.access_token}` }
-                    });
+                    const userRes = await fetch('https://api.github.com/user', { headers: { Authorization: `token ${data.access_token}` } });
                     const userData = await userRes.json();
-
-                    const orgRes = await fetch(`https://api.github.com/orgs/${CONFIG.ORG_NAME}/members/${userData.login}`, {
-                        headers: { Authorization: `token ${data.access_token}` }
-                    });
+                    const orgRes = await fetch(`https://api.github.com/orgs/${CONFIG.ORG_NAME}/members/${userData.login}`, { headers: { Authorization: `token ${data.access_token}` } });
 
                     const isStaff = orgRes.status === 204;
-
-                    PortalAuth.save({
+                    await PortalAuth.save({
                         access_token: data.access_token,
-                        user: {
-                            login: userData.login,
-                            avatar: userData.avatar_url,
-                            isStaff: isStaff
-                        }
+                        user: { login: userData.login, avatar: userData.avatar_url, isStaff: isStaff }
                     });
-
-                    this.checkLogin(); // 刷新本地 data 状态
+                    this.checkLogin();
                 }
-            } catch (e) {
-                console.error("Auth Error:", e);
-                alert("Auth Failed. Please try again.");
-            } finally {
-                this.step = 1;
-            }
+            } catch (e) { console.error(e); } finally { this.step = 1; }
         },
-
         checkLogin() {
             const auth = PortalAuth.get();
-            // 这里根据 PortalAuth.save 的结构读取
-            if (auth && auth.user) {
-                this.user = auth.user;
-            }
+            if (auth) this.user = auth.user;
         },
-
-        logout() {
-            PortalAuth.logout();
-            this.user = null;
-        },
-
+        logout() { PortalAuth.logout(); },
         goToEdit(type) {
             const currentPath = window.location.hash.replace(/^#/, '').split('?')[0] || '/README';
             const targetPath = type === 'new' ? '/NEW_DOCUMENT' : currentPath;
