@@ -3,48 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <title>OpenST Wiki</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
     <link rel="stylesheet" href="wiki-style.css">
 </head>
 <body class="bg-[#050505] text-gray-400 font-sans selection:bg-[#40B5AD]/30">
 
-<nav class="fixed top-0 w-full h-14 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 z-[1000] flex items-center justify-between px-6">
-    <div class="flex items-center gap-3 cursor-pointer" onclick="location.hash='#/'">
-        <div class="w-3 h-3 bg-[#40B5AD] shadow-[0_0_10px_#40B5AD]"></div>
-        <span class="font-black text-white tracking-widest text-sm uppercase">OpenST <span class="text-gray-600 font-light">Wiki</span></span>
-    </div>
-    <div id="auth-zone"></div>
-</nav>
-
-<aside id="custom-sidebar" class="fixed left-0 top-14 bottom-0 w-64 bg-[#080808] border-r border-white/5 overflow-y-auto z-[900] py-6 px-4 hidden md:block">
-    <div class="mb-8 px-4 text-[10px] text-gray-600 font-mono tracking-[0.3em] uppercase">Archive_Files</div>
-    <nav id="nav-tree" class="space-y-1">
-    </nav>
-</aside>
-
-<main id="app" class="pt-14 md:ml-64 min-h-screen"></main>
-
-<div id="editor-overlay" class="fixed inset-0 z-[2000] hidden flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-black/90 backdrop-blur-md"></div>
-    <div class="relative w-full max-w-5xl h-[90vh] bg-[#0c0c0c] border border-white/10 rounded-[2rem] flex flex-col shadow-2xl overflow-hidden">
-        <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-            <div>
-                <h2 class="text-white font-bold tracking-tight">条目协作修改</h2>
-                <p id="edit-path" class="text-[10px] font-mono text-[#40B5AD] mt-0.5 uppercase tracking-widest"></p>
-            </div>
-            <div class="flex gap-3">
-                <button onclick="closeWikiEditor()" class="px-5 py-2 text-xs text-gray-500 hover:text-white uppercase">取消</button>
-                <button onclick="submitWikiToIssue()" class="px-6 py-2 text-xs bg-[#40B5AD] text-black font-black rounded-full shadow-lg shadow-[#40B5AD]/20 hover:scale-105 transition">提交修改 Issue</button>
-            </div>
+<div id="wiki-app">
+    <nav class="fixed top-0 w-full h-14 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 z-[1000] flex items-center justify-between px-6">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="location.hash='#/'">
+            <div class="w-3 h-3 bg-[#40B5AD] shadow-[0_0_10px_#40B5AD]"></div>
+            <span class="font-black text-white tracking-widest text-sm uppercase">OpenST <span class="text-gray-600 font-light">Wiki</span></span>
         </div>
-        <textarea id="wiki-md-editor" class="flex-1 bg-transparent p-10 text-gray-300 font-mono text-base focus:outline-none resize-none leading-relaxed"></textarea>
-    </div>
-</div>
 
-<button id="float-edit-btn" onclick="openWikiEditor()" class="fixed bottom-8 right-8 w-14 h-14 bg-[#40B5AD] text-black rounded-2xl hidden items-center justify-center shadow-xl hover:rotate-12 transition-all z-[999]">
-    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-</button>
+        <div class="flex items-center gap-4">
+            <div v-if="userToken" class="flex items-center gap-3 bg-white/5 pl-3 pr-1 py-1 rounded-full border border-white/5 group relative cursor-pointer">
+                <span class="text-xs text-white font-bold">已授权</span>
+                <div class="w-6 h-6 bg-[#40B5AD] rounded-full flex items-center justify-center text-[10px] text-black font-bold">ST</div>
+                <div @click="logout" class="absolute inset-0 bg-red-500 rounded-full opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <span class="text-[10px] text-white font-black">LOGOUT</span>
+                </div>
+            </div>
+            <button v-else @click="loginWithGitHub" class="text-xs font-bold text-[#40B5AD] border border-[#40B5AD]/20 px-4 py-1.5 rounded-full hover:bg-[#40B5AD] hover:text-black transition">
+                LOGIN_TO_EDIT
+            </button>
+        </div>
+    </nav>
+
+    <aside id="custom-sidebar" class="fixed left-0 top-14 bottom-0 w-64 bg-[#080808] border-r border-white/5 overflow-y-auto z-[900] py-6 px-4 hidden md:block">
+        <div class="mb-8 px-4 text-[10px] text-gray-600 font-mono tracking-[0.3em] uppercase">Archive_Files</div>
+        <nav id="nav-tree" class="space-y-1">
+        </nav>
+    </aside>
+
+    <main id="app" class="pt-14 md:ml-64 min-h-screen"></main>
+
+    <div v-if="isEditing" class="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-md"></div>
+        <div class="relative w-full max-w-5xl h-[90vh] bg-[#0c0c0c] border border-white/10 rounded-[2rem] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                <div>
+                    <h2 class="text-white font-bold tracking-tight">条目协作修改</h2>
+                    <p class="text-[10px] font-mono text-[#40B5AD] mt-0.5 uppercase tracking-widest">{{ editForm.path }}</p>
+                </div>
+                <div class="flex gap-3">
+                    <button @click="isEditing = false" class="px-5 py-2 text-xs text-gray-500 hover:text-white uppercase">取消</button>
+                    <button @click="handleWikiSubmit" :disabled="step === 2" class="px-6 py-2 text-xs bg-[#40B5AD] text-black font-black rounded-full shadow-lg shadow-[#40B5AD]/20 hover:scale-105 transition disabled:opacity-50">
+                        {{ step === 2 ? 'SUBMITTING...' : '提交修改 ISSUE' }}
+                    </button>
+                </div>
+            </div>
+            <textarea v-model="editForm.content" class="flex-1 bg-transparent p-10 text-gray-300 font-mono text-base focus:outline-none resize-none leading-relaxed"></textarea>
+        </div>
+    </div>
+
+    <button v-if="userToken && showEditBtn" @click="openWikiEditor" class="fixed bottom-8 right-8 w-14 h-14 bg-[#40B5AD] text-black rounded-2xl flex items-center justify-center shadow-xl hover:rotate-12 transition-all z-[999]">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+    </button>
+</div>
 
 <script src="https://unpkg.com/docsify@4/lib/docsify.min.js"></script>
 <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
