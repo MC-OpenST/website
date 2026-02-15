@@ -190,7 +190,7 @@ const AppOptions = {
                 this.isAdmin = data.isAdmin;
             } catch (e) { console.error("Admin check failed", e); }
         },
-        logout() {
+        handleLogout() {
             this.user = null;
             this.isAdmin = false;
             this.userToken = '';
