@@ -8,6 +8,7 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown-dark.css">
 
     <style>
@@ -17,35 +18,42 @@
         .glass-panel { background: rgba(255, 255, 255, 0.01); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px; }
         .cyber-btn { background: var(--brand-color); color: #000; font-weight: 800; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         .cyber-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 0 20px rgba(64, 181, 173, 0.4); }
+        .cyber-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-        /* 预览区定制 */
         .markdown-body { background: transparent !important; font-size: 14px; line-height: 1.8; color: rgba(255,255,255,0.8); }
         .markdown-body h1, .markdown-body h2 { border-bottom-color: rgba(255,255,255,0.1); }
+        .markdown-body img { border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
 
-        /* 隐藏滚动条但保留功能 */
         .no-scrollbar::-webkit-scrollbar { width: 4px; }
-        .no-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
-
-        /* 左右分割线 */
+        .no-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
         .resizer { width: 1px; background: rgba(255,255,255,0.05); margin: 0 4px; }
+
+        input::placeholder { color: rgba(255,255,255,0.2); }
     </style>
 </head>
 <body>
 
-<div id="editor-app" class="h-screen w-full flex flex-col p-4 lg:p-6 fade-in">
+<div id="editor-app" class="h-screen w-full flex flex-col p-4 lg:p-6">
 
     <header class="flex justify-between items-center mb-4 px-4">
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-4 flex-1">
             <a href="wiki.html" class="text-[10px] font-black tracking-[0.3em] text-white/20 hover:text-[#40B5AD] transition-all uppercase">Exit</a>
             <div class="h-4 w-px bg-white/10"></div>
-            <h1 class="text-sm font-mono tracking-tighter text-white/60">
+
+            <div v-if="isNewFile" class="flex items-center gap-2">
+                <span class="text-[10px] font-mono text-white/20 uppercase">New Document:</span>
+                <input v-model="newFileName" placeholder="filename-in-kebab-case"
+                       class="bg-transparent border-b border-[#40B5AD]/30 outline-none font-mono text-sm text-[#40B5AD] w-64 focus:border-[#40B5AD] transition-all">
+                <span class="text-sm font-mono text-white/40">.md</span>
+            </div>
+            <h1 v-else class="text-sm font-mono tracking-tighter text-white/60">
                 editing: <span class="text-[#40B5AD]">{{ filePath }}</span>
             </h1>
         </div>
 
         <div class="flex items-center gap-4">
-            <span v-if="loading" class="text-[10px] text-white/20 animate-pulse tracking-widest uppercase">Syncing...</span>
-            <button @click="submitEdit" :disabled="loading || !content.trim()" class="cyber-btn px-6 py-2 rounded-lg text-[11px]">
+            <span v-if="loading" class="text-[10px] text-white/20 animate-pulse tracking-widest uppercase">Processing...</span>
+            <button @click="submitEdit" :disabled="loading || !content.trim() || (isNewFile && !newFileName.trim())" class="cyber-btn px-6 py-2 rounded-lg text-[11px]">
                 {{ loading ? 'WAIT' : 'COMMIT' }}
             </button>
         </div>
@@ -53,13 +61,14 @@
 
     <main class="flex-1 flex glass-panel overflow-hidden">
         <section class="flex-1 flex flex-col min-w-0">
-            <div class="px-6 py-2 border-bottom border-white/5 text-[9px] text-white/20 font-mono tracking-widest uppercase flex justify-between">
+            <div class="px-6 py-2 border-b border-white/5 text-[9px] text-white/20 font-mono tracking-widest uppercase flex justify-between">
                 <span>Editor / Markdown</span>
                 <span>{{ content.length }} chars</span>
             </div>
             <textarea
                     v-model="content"
                     spellcheck="false"
+                    placeholder="Write your story here..."
                     class="flex-1 w-full p-8 lg:p-10 bg-transparent outline-none font-mono text-sm leading-relaxed text-white/70 resize-none no-scrollbar">
             </textarea>
         </section>
@@ -67,8 +76,8 @@
         <div class="resizer"></div>
 
         <section class="flex-1 flex flex-col min-w-0 bg-white/[0.005]">
-            <div class="px-6 py-2 border-bottom border-white/5 text-[9px] text-[#40B5AD] font-mono tracking-widest uppercase">
-                Live Preview
+            <div class="px-6 py-2 border-b border-white/5 text-[9px] text-[#40B5AD] font-mono tracking-widest uppercase">
+                Live Preview (Local Assets Integrated)
             </div>
             <div
                     v-html="previewHtml"
@@ -77,8 +86,26 @@
         </section>
     </main>
 
-    <footer v-if="user" class="mt-3 px-4 flex justify-end">
-        <div class="text-[9px] font-mono text-white/10 tracking-[0.2em]">
+    <footer class="mt-4 flex items-center justify-between px-4">
+        <div class="flex items-center gap-4">
+            <label class="group cursor-pointer">
+                <input type="file" multiple accept="image/*" @change="handleImageSelect" class="hidden">
+                <div class="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-[#40B5AD]/20 border border-white/10 rounded-xl transition-all">
+                    <span class="text-[10px] font-black text-white/40 group-hover:text-[#40B5AD] uppercase tracking-widest">Attach Images</span>
+                </div>
+            </label>
+
+            <div class="flex gap-2">
+                <div v-for="file in imageFiles" :key="file.name"
+                     @click="insertImageLink(file.name)"
+                     class="group relative w-10 h-10 rounded-lg overflow-hidden border border-white/10 cursor-copy hover:border-[#40B5AD] transition-all"
+                     :title="'Click to insert: ' + file.name">
+                    <img :src="imageMap[file.name]" class="w-full h-full object-cover opacity-60 group-hover:opacity-100">
+                </div>
+            </div>
+        </div>
+
+        <div v-if="user" class="text-[9px] font-mono text-white/10 tracking-[0.2em]">
             IDENTIFIED AS: <span class="text-white/40">{{ user.login.toUpperCase() }}</span>
         </div>
     </footer>
@@ -86,55 +113,121 @@
 
 <script>
     const { createApp } = Vue;
+    const WORKER_URL = "https://openstsubmission.linvin.net";
 
     createApp({
         data() {
+            const pathParam = new URLSearchParams(window.location.search).get('path');
             return {
-                filePath: new URLSearchParams(window.location.search).get('path') || '/README',
+                filePath: pathParam || '/README',
+                isNewFile: pathParam === '/NEW_DOCUMENT',
+                newFileName: '',
                 content: '',
                 loading: false,
-                user: null
+                user: null,
+                imageFiles: [],
+                imageMap: {} // 存储文件名到 Blob URL 的映射
             }
         },
         computed: {
             previewHtml() {
-                // 将 Markdown 转换为 HTML
-                return marked.parse(this.content || '*Nothing to preview...*');
+                let raw = this.content || '*Waiting for input...*';
+
+                // 本地图片实时预览算法
+                // 将 ![alt](filename) 替换为 ![alt](blob:...)
+                const processed = raw.replace(/!\[(.*?)\]\((?!http)(.*?)\)/g, (match, alt, filename) => {
+                    const localBlob = this.imageMap[filename];
+                    return localBlob ? `![${alt}](${localBlob})` : match;
+                });
+
+                return marked.parse(processed);
             }
         },
         async mounted() {
             this.checkAuth();
-            const normalizedPath = this.filePath.startsWith('/') ? this.filePath : '/' + this.filePath;
-            try {
-                const res = await fetch(`./content${normalizedPath}.md`);
-                this.content = res.ok ? await res.text() : "# File Not Found\nStarting a new document...";
-            } catch (e) {
-                this.content = "# Error\nCould not fetch remote content.";
+            if (!this.isNewFile) {
+                this.loading = true;
+                const normalizedPath = this.filePath.startsWith('/') ? this.filePath : '/' + this.filePath;
+                try {
+                    const res = await fetch(`./content${normalizedPath}.md`);
+                    this.content = res.ok ? await res.text() : "# New Document\nStart here...";
+                } catch (e) { this.content = "# Error fetching content"; }
+                finally { this.loading = false; }
             }
         },
         methods: {
             checkAuth() {
                 const raw = localStorage.getItem('gh_auth');
                 if (!raw) { window.location.href = 'wiki.html'; return; }
-                this.user = JSON.parse(raw);
+                const authData = JSON.parse(raw);
+                this.user = authData.user;
+                this.token = authData.access_token;
             },
+
+            handleImageSelect(e) {
+                const files = Array.from(e.target.files);
+                this.imageFiles = files;
+
+                // 释放旧的内存
+                Object.values(this.imageMap).forEach(URL.revokeObjectURL);
+                this.imageMap = {};
+
+                // 创建新的映射
+                files.forEach(file => {
+                    this.imageMap[file.name] = URL.createObjectURL(file);
+                });
+            },
+
+            insertImageLink(name) {
+                this.content += `\n![Image Description](${name})`;
+            },
+
             async submitEdit() {
+                // 1. 确定文件夹和文件名
+                let baseName = this.isNewFile
+                    ? this.newFileName.trim().replace(/[^a-zA-Z0-9-_]/g, '-')
+                    : this.filePath.replace(/^\//, '').replace('.md', '');
+
+                if (!baseName) return alert("Please specify a valid filename.");
+
                 this.loading = true;
+
                 try {
-                    const res = await fetch(`https://api.github.com/repos/MC-OpenST/Submissions/issues`, {
+                    // 2. JSZip 分层打包
+                    const zip = new JSZip();
+                    const folder = zip.folder(baseName); // 创建同名文件夹
+
+                    folder.file(`${baseName}.md`, this.content); // 放入 MD
+                    this.imageFiles.forEach(f => folder.file(f.name, f)); // 放入图片
+
+                    const zipBlob = await zip.generateAsync({ type: "blob" });
+                    const zipFileName = `${this.isNewFile ? 'wiki-submission' : 'wiki-modify'}-${baseName}.zip`;
+
+                    // 3. FormData 喷射至 Worker
+                    const fd = new FormData();
+                    fd.append('file', zipBlob, zipFileName);
+                    fd.append('user', this.user.login);
+                    fd.append('path', baseName);
+                    fd.append('title', `[Wiki ${this.isNewFile ? '新建' : '修订'}] ${baseName}`);
+
+                    const res = await fetch(`${WORKER_URL}/api/wiki/submit-archive`, {
                         method: 'POST',
-                        headers: {
-                            'Authorization': `token ${this.user.token}`,
-                            'Accept': 'application/vnd.github.v3+json'
-                        },
-                        body: JSON.stringify({
-                            title: `[Wiki修订] ${this.filePath}`,
-                            body: `### 🛠️ Wiki 修订提交\n\n- **路径**: \`content${this.filePath}.md\`\n- **作者**: @${this.user.login}\n\n#### 修订内容:\n\n\`\`\`markdown\n${this.content}\n\`\`\``
-                        })
+                        headers: { 'Authorization': `Bearer ${this.token}` },
+                        body: fd
                     });
-                    if (res.ok) { alert('Submitted!'); window.location.href = 'wiki.html'; }
-                } catch (e) { alert('Error: ' + e.message); }
-                finally { this.loading = false; }
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        alert(`🎉 Success! Issue #${data.issueNumber} created.`);
+                        window.location.href = `https://github.com/MC-OpenST/website/issues/${data.issueNumber}`;
+                    } else {
+                        throw new Error(await res.text());
+                    }
+                } catch (e) {
+                    alert('Submission failed: ' + e.message);
+                } finally {
+                    this.loading = false;
+                }
             }
         }
     }).mount('#editor-app');
