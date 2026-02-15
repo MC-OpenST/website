@@ -68,9 +68,20 @@ Vue.createApp({
     },
     methods: {
         loginWithGitHub() {
+            // 1. 获取当前页面的纯净地址 (不带 # 或 ?)
+            const redirect_uri = window.location.origin + window.location.pathname;
+
+            // 2. 将当前完整状态（包含 hash 路由）编码进 state
             const state = btoa(window.location.href);
+
             const CLIENT_ID = CONFIG.CLIENT_ID;
-            window.location.href = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=read:org,repo&state=${state}`;
+
+            // 3. 构建完整的 OAuth 跳转 URL
+            window.location.href = `https://github.com/login/oauth/authorize` +
+                `?client_id=${CLIENT_ID}` +
+                `&scope=read:org,repo` +
+                `&state=${state}` +
+                `&redirect_uri=${encodeURIComponent(redirect_uri)}`;
         },
 
         async handleOAuth(code) {
