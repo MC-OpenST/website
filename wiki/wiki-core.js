@@ -60,7 +60,6 @@ Vue.createApp({
             try {
                 const res = await fetch(`${CONFIG.WORKER}/api/exchange-token?code=${code}`);
                 const data = await res.json();
-
                 if (data.access_token) {
                     await this.fetchUserInfo(data.access_token);
                 }
@@ -73,7 +72,6 @@ Vue.createApp({
     },
     methods: {
         loginWithGitHub() {
-            // 对齐档案馆：动态获取当前路径
             const redirect_uri = window.location.origin + window.location.pathname;
 
             window.location.href = `https://github.com/login/oauth/authorize` +
