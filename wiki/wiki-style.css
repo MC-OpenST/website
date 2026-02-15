@@ -155,8 +155,49 @@ section.content { padding-top: 84px !important; }
 @media screen and (max-width: 768px) { .fab-label { display: none !important; } .fab-container { right: 20px; bottom: 20px; } }
 
 /* --- 6. 用户组件 --- */
-.github-login-btn { background: #fff; color: #000; font-size: 10px; font-weight: 800; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; }
-.user-avatar-frame { width: 32px; height: 32px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); object-fit: cover; }
+.status-indicator {
+    display: flex !important;
+    align-items: center !important; /* 核心：让文字、头像、按钮垂直居中 */
+    gap: 12px !important;
+    height: 100%; /* 继承顶栏高度 */
+}
+
+/* 用户名和 Staff 标签的容器 */
+.status-indicator > div {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important; /* 垂直居中对齐 */
+    align-items: flex-end !important;   /* 文字向右对齐，靠近头像 */
+    line-height: 1.1 !important;        /* 压缩行高，防止加粗后撑开间距 */
+}
+
+/* 用户头像框 */
+.user-avatar-frame {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 10px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    object-fit: cover !important;
+    /* 增加微弱发光，呼应 Logo */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Exit 退出按钮 */
+.logout-btn {
+    background: rgba(255, 77, 77, 0.1) !important; /* 淡淡的红底 */
+    color: #ff4d4d !important;
+    font-size: 10px !important;
+    padding: 4px 8px !important;
+    border-radius: 6px !important;
+    border: 1px solid rgba(255, 77, 77, 0.2) !important;
+    transition: all 0.3s ease !important;
+    margin-left: 4px !important;
+}
+
+.logout-btn:hover {
+    background: #ff4d4d !important;
+    color: #000 !important;
+}
 
 /* 1. 针对标题：增加厚度与字符间距，营造高级感 */
 .markdown-section h1,
