@@ -229,8 +229,11 @@ const AppOptions = {
             const res = await fetch(`${WORKER_URL}/api/exchange-token?code=${code}`);
             const data = await res.json();
             if (data.access_token) {
-                PortalAuth.save(data);
+                // 第二个参数传 true
+                await PortalAuth.save(data, true);
                 window.history.replaceState({}, document.title, window.location.pathname);
+                // 重新触发身份校验以更新 UI
+                await this.checkIdentity();
             }
         }
 

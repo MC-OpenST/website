@@ -1,4 +1,5 @@
 import { TAG_CONFIG } from '../scripts/config.js';
+import { PortalAuth } from '../scripts/auth.js';
 
 const { createApp } = Vue;
 
@@ -26,36 +27,41 @@ const UploadApp = {
     },
 
     async mounted() {
-        // 检查本地存储
-        this.checkLoginExpiry();
+        // 1. 检查登录状态：对齐档案馆和 Wiki 的逻辑
+        const auth = PortalAuth.get();
+        if (auth) {
+            this.userToken = auth.token;
+            this.user = auth.user; // 这样上传页也能显示是谁在投递了
+        }
 
-        // 处理 OAuth 回调
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
 
-        // 增加 step 状态判断，防止重复进入请求逻辑
         if (code && this.step !== 2) {
-            this.step = 2; // 1. 立即进入“正在认证”锁定状态
+            this.step = 2;
 
-            // 先清空地址栏再发起请求，切断 Vue 重新渲染导致再次触发 mounted 的可能性
+            // 清理 URL
             const cleanUrl = window.location.origin + window.location.pathname;
             window.history.replaceState({}, document.title, cleanUrl);
 
             try {
-                // 这里的请求现在被保护了，不会被重复调用
                 const res = await fetch(`${WORKER_URL}/api/exchange-token?code=${code}`);
                 const data = await res.json();
 
                 if (data.access_token) {
-                    this.saveAuth(data.access_token);
-                } else if (data.error) {
-                    console.error("Token Exchange Error:", data.error_description || data.error);
+                    // 不再调用 saveAuth，直接用 PortalAuth 补完用户信息
+                    // 传 true 是为了让 auth.js 去 fetch 用户头像和 login 名
+                    await PortalAuth.save(data, true);
+
+                    // 重新同步本地状态
+                    const updatedAuth = PortalAuth.get();
+                    this.userToken = updatedAuth.token;
+                    this.user = updatedAuth.user;
                 }
             } catch (e) {
-                console.error("GitHub Auth Network Error:", e);
-                alert("GitHub 认证失败，请检查网络或稍后重试");
+                console.error("Auth Error:", e);
             } finally {
-                this.step = 1; // 4. 处理完毕，解除锁定
+                this.step = 1;
             }
         }
     },

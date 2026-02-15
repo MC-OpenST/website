@@ -109,7 +109,7 @@ Vue.createApp({
                         access_token: data.access_token,
                         user: {
                             login: userData.login,
-                            avatar: userData.avatar_url, // 对齐：将 _url 后缀去掉
+                            avatar: userData.avatar_url,
                             isStaff: isStaff
                         }
                     });
