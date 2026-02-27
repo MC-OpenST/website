@@ -1120,28 +1120,38 @@ section.content { padding-top: 84px !important; }
     color: #40B5AD !important;
     user-select: text; /* 展开后允许选中 */
 }
-/* 1. 强制侧边栏固定，拥有自己的独立滚动域 */
-.sidebar {
-    position: fixed !important;
-    overflow-y: auto !important;
-    height: 100vh !important;
-}
 
-/* 2. 移除主体容器的统一滚动，改为内部独立滚动 */
-body, html {
-    overflow: hidden !important; /* 禁止全页面的总滚动条 */
-    height: 100% !important;
-}
+@media screen and (max-width: 768px) {
+    /* 侧边栏基础状态 */
+    .sidebar {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        height: 100vh !important;
+        width: 280px !important;
+        z-index: 10000 !important;
+        transition: transform 0.3s ease !important;
+        transform: translateX(-300px); /* 默认藏起来 */
+    }
 
-/* 3. 让右侧主内容区成为独立的滚动容器 */
-main {
-    height: 100vh !important;
-    overflow-y: auto !important;
-    position: relative;
-    -webkit-overflow-scrolling: touch;
-}
+    /* 侧边栏内的导航，防止点击文字时由于层级问题点不动 */
+    .sidebar-nav {
+        padding: 80px 20px !important;
+        pointer-events: auto !important;
+    }
 
-/* 4. 确保在侧边栏折叠时，内容区依然能正确滚动 */
-body.close main {
-    width: 100vw;
+    /* 内容区在移动端保持不动，不被 Docsify 的默认 transform 挤歪 */
+    body.close .content, body:not(.close) .content {
+        transform: none !important;
+        margin-left: 0 !important;
+        width: 100% !important;
+        transition: none !important;
+    }
+
+    /* 侧边栏按钮：确保在最顶层且位置固定 */
+    .sidebar-toggle {
+        left: 20px !important;
+        bottom: 20px !important;
+        z-index: 10001 !important;
+    }
 }

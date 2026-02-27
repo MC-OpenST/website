@@ -137,6 +137,40 @@
         document.body.classList.add('close');
     }
 </script>
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        const body = document.body;
+        const sidebar = document.querySelector('.sidebar');
+
+        const updateSidebar = () => {
+            const isMobile = window.innerWidth <= 768;
+            if (!isMobile) return;
+
+            // Docsify 在移动端打开时 body 会去掉 .close 类名
+            const isOpen = !body.classList.contains('close');
+
+            if (isOpen) {
+                // 强行把侧边栏拉回视野，并确保层级最高
+                sidebar.style.setProperty('transform', 'translateX(0)', 'important');
+                sidebar.style.setProperty('visibility', 'visible', 'important');
+                sidebar.style.setProperty('opacity', '1', 'important');
+            } else {
+                // 强行推出去
+                sidebar.style.setProperty('transform', 'translateX(-100%)', 'important');
+            }
+        };
+
+        // 1. 初始化执行一次
+        updateSidebar();
+
+        // 2. 监听 body 类名的变化
+        const observer = new MutationObserver(updateSidebar);
+        observer.observe(body, { attributes: true, attributeFilter: ['class'] });
+
+        // 3. 窗口缩放时也检查一下
+        window.addEventListener('resize', updateSidebar);
+    });
+</script>
 <script src="https://cdn.jsdelivr.net/npm/docsify@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/js/docsify-themeable.min.js"></script>
