@@ -1155,3 +1155,202 @@ section.content { padding-top: 84px !important; }
         z-index: 10001 !important;
     }
 }
+/* --- 终极响应式加固 --- */
+
+/* 1. 移动端：确保侧边栏在 body:not(.close) 时绝对显示 */
+@media screen and (max-width: 1024px) {
+    .sidebar {
+        transform: translateX(-300px); /* 默认关闭 */
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    body:not(.close) .sidebar {
+        transform: translateX(0) !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+}
+
+/* 2. 横屏/平板/PC：强制侧边栏常驻，不许消失 */
+@media screen and (min-width: 1025px) {
+    .sidebar {
+        transform: translateX(0) !important; /* 强制归位 */
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 280px !important;
+        height: 100vh !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        z-index: 1000 !important;
+    }
+
+    /* 修复内容区，给左侧腾出固定空间 */
+    .content {
+        padding-left: 280px !important;
+        width: 100% !important;
+        margin-left: 0 !important;
+        transform: none !important;
+    }
+
+    .sidebar-toggle {
+        display: none !important; /* 横屏隐藏开关按钮 */
+    }
+}
+@media screen and (min-width: 1025px) {
+    .sidebar {
+        transform: translateX(0) !important;
+        position: fixed !important;
+        display: block !important;
+        opacity: 1 !important;
+        width: 300px !important;
+    }
+    .content {
+        /* 横屏时，内容区绝对不许受 body.close 的影响而偏移 */
+        margin-left: 300px !important;
+        width: calc(100% - 300px) !important;
+        transform: none !important;
+    }
+}
+@media screen and (min-width: 1025px) {
+    /* 强制重置 body 状态 */
+    body.close, body {
+        overflow: auto !important;
+    }
+
+    /* 物理锁定侧边栏：禁止任何位移 */
+    .sidebar, #sidebar-fallback {
+        transform: translateX(0) !important;
+        left: 0 !important;
+        display: block !important;
+        visibility: visible !important;
+        width: 300px !important;
+        transition: none !important; /* 关掉动画，防止旋转时闪烁 */
+    }
+
+    /* 物理锁定内容区：强制留出 300px 空间 */
+    section.content {
+        padding-left: 300px !important;
+        margin: 0 !important;
+        transform: none !important;
+        width: auto !important;
+    }
+
+    /* 隐藏切换按钮 */
+    .sidebar-toggle {
+        display: none !important;
+    }
+}
+/* --- 1. 提升侧边栏整体层级，确保它在顶栏之上 --- */
+.sidebar {
+    /* 必须高于顶栏的 1000 */
+    z-index: 1001 !important;
+    padding-top: 0 !important; /* 清除可能导致偏移的 padding */
+    background-color: #0c0c0c !important;
+}
+
+/* --- 2. 为标题和搜索框留出“视觉呼吸区” --- */
+/* 我们不在 .sidebar 上加 padding，而是给内部第一个元素加 margin */
+
+/* 站点名称 (OpenST Wiki 大字) */
+.sidebar .app-name {
+    display: block !important;
+    margin: 30px 20px 10px 20px !important; /* 顶部留出足够空间 */
+    font-size: 22px !important;
+    font-weight: 900 !important;
+    color: var(--brand-color) !important;
+}
+
+/* 搜索框 (紧跟在标题后面) */
+.sidebar .search {
+    position: relative !important;
+    margin: 10px 20px 20px 20px !important;
+    display: block !important;
+}
+
+/* 导航链接 (紧跟在搜索框后面) */
+.sidebar-nav {
+    padding: 0 20px 40px 20px !important;
+}
+
+/* --- 3. 移动端兼容补丁 --- */
+@media screen and (max-width: 1024px) {
+    /* 移动端展开时，确保侧边栏不会被顶栏切断 */
+    body:not(.close) .sidebar {
+        z-index: 10001 !important; /* 移动端需要更高层级 */
+    }
+}
+
+/* --- 4. 影子容器同步修复 --- */
+#sidebar-fallback {
+    z-index: 1000 !important;
+}
+#sidebar-fallback .app-name,
+#sidebar-fallback .search {
+    display: block !important;
+}
+/* --- 侧边栏顶部元素精准排布 --- */
+
+/* 1. 确保侧边栏整体层级最高，且背景不透明 */
+.sidebar {
+    z-index: 1001 !important;
+    background: #0c0c0c !important;
+    padding-top: 0 !important; /* 取消之前的 padding，我们手动控制间距 */
+}
+
+/* 2. 站点标题 (OpenST Wiki) */
+.sidebar .app-name,
+#sidebar-fallback .app-name {
+    display: block !important;
+    margin: 80px 24px 10px 24px !important; /* 80px 距离顶栏，24px 左右边距 */
+    font-size: 20px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.15em !important;
+    color: var(--brand-color) !important;
+    text-transform: uppercase;
+    text-align: left;
+}
+
+/* 3. 搜索框 (排在标题下方) */
+.sidebar .search,
+#sidebar-fallback .search {
+    position: relative !important;
+    margin: 0 20px 20px 20px !important; /* 左右 20px 留白，底部 20px 与菜单隔开 */
+    padding: 0 !important;
+    display: block !important;
+}
+
+/* 4. 搜索框内部输入框美化 */
+.sidebar .search input {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 10px !important;
+    color: #fff !important;
+    height: 38px !important;
+    padding: 0 12px !important;
+    transition: all 0.3s ease !important;
+}
+
+.sidebar .search input:focus {
+    border-color: var(--brand-color) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 0 15px rgba(64, 181, 173, 0.2) !important;
+}
+
+/* 5. 导航菜单 (从搜索框下方开始) */
+.sidebar-nav {
+    padding: 0 24px 40px 24px !important;
+    margin-top: 0 !important;
+}
+
+/* 6. 移动端适配：展开侧边栏时确保标题不被遮挡 */
+@media screen and (max-width: 1024px) {
+    .sidebar {
+        padding-top: 20px !important; /* 移动端可以稍微调紧一点 */
+    }
+    .sidebar .app-name {
+        margin-top: 60px !important;
+    }
+}

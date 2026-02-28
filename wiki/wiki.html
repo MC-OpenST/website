@@ -5,8 +5,7 @@
     <title>OpenST Wiki</title>
     <link rel="icon" href="../images/favicon.png"></link>
     <link rel="apple-touch-icon" href="../images/favicon.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple.css">
     <script src="//cdn.jsdelivr.net/npm/prismjs@1/prism.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-python.min.js"></script>
@@ -15,7 +14,6 @@
     <link rel="stylesheet" href="wiki-style.css">
 
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -65,15 +63,18 @@
 </script>
 <body>
 <div class="soft-bg"></div>
-
 <div id="app">Loading Wiki...</div>
+<div id="sidebar-fallback" class="sidebar" style="display:none; position:fixed; left:0; top:0; width:300px; z-index:998;">
+    <div class="sidebar-nav">
+    </div>
+</div>
 <div id="wiki-collab"></div>
 
 <script>
     window.$docsify = {
         name: 'OpenST Wiki',
         basePath: 'content/',
-        relativePath: false,
+        homepage: 'README.md',
         loadSidebar: true,
         auto2top: true,
         mergeNavbar: true,
@@ -81,106 +82,94 @@
             readyTransition: true,
             responsiveTables: true
         },
-        executeScript: true,
         search: {
             paths: 'auto',
             placeholder: '在此搜索...',
             noData: '未找到结果',
-            depth: 3,
-            hideOtherSidebarContent: false,
+            depth: 3
         },
         subMaxLevel: 2,
-        zoomImage: {
-            margin: 20,
-            background: 'rgba(0, 0, 0, 0.8)',
-            scrollOffset: 40
-        },
-        previousText: '上一章节',
-        nextText: '下一章节',
-        crossChapter: true,
-        crossChapterText: true,
-        count: {
-            countable: true,
-            fontsize: '0.85em',
-            color: 'rgba(255, 255, 255, 0.4)',
-            language: 'chinese'
-        },
         alias: {
             '/.*/_sidebar.md': '/_sidebar.md'
         },
-        sidebarDisplayLevel: 1,
-        collapseEnumeration: true,
-    };
-</script>
-<script>
-    document.addEventListener('click', function(e) {
-        // 只有在窗口宽度小于 1024px (移动端/平板) 时才执行
-        if (window.innerWidth > 1024) return;
+        plugins: [
+            function(hook, vm) {
+                hook.doneEach(function() {
+                    // 1. 强制重排顺序：把搜索框挪到标题 (app-name) 下面
+                    const moveSearchBox = () => {
+                        const searchBox = document.querySelector('.sidebar .search');
+                        const appName = document.querySelector('.sidebar .app-name');
+                        if (searchBox && appName && searchBox.previousElementSibling === null) {
+                            // 如果搜索框在最顶部（即没有前一个兄弟元素），就把它挪到标题后面
+                            appName.parentNode.insertBefore(searchBox, appName.nextSibling);
+                        }
+                    };
 
-        const body = document.querySelector('body');
-        const sidebar = document.querySelector('.sidebar');
-        const toggleBtn = document.querySelector('.sidebar-toggle');
+                    // 2. 智能同步逻辑
+                    const syncEverything = () => {
+                        const realNav = document.querySelector('.sidebar > .sidebar-nav');
+                        const fallbackNav = document.querySelector('#sidebar-fallback .sidebar-nav');
+                        const fallbackContainer = document.querySelector('#sidebar-fallback');
 
-        // 逻辑：如果侧边栏是打开状态
-        // 且 点击的对象既不是侧边栏本身，也不是开关按钮
-        if (!body.classList.contains('close') &&
-            sidebar && !sidebar.contains(e.target) &&
-            toggleBtn && !toggleBtn.contains(e.target)) {
+                        if (realNav && fallbackNav) {
+                            // 核心修正：只有当真实侧边栏里“标题”和“搜索框”都到位了，才同步给影子
+                            const hasSearch = realNav.querySelector('.search');
+                            const hasApp = realNav.querySelector('.app-name');
 
-            toggleBtn.click();
-        }
-    });
-</script>
-<script>
+                            if (hasSearch && hasApp) {
+                                fallbackNav.innerHTML = realNav.innerHTML;
+                            }
+                        }
+
+                        // 状态切换逻辑
+                        if (window.innerWidth > 1024) {
+                            const isRealEmpty = !realNav || realNav.innerHTML.trim() === "" || !realNav.querySelector('ul');
+                            fallbackContainer.style.display = isRealEmpty ? 'block' : 'none';
+                        } else {
+                            fallbackContainer.style.display = 'none';
+                        }
+                    };
+
+                    // 执行顺序：先挪位置，再同步
+                    moveSearchBox();
+                    syncEverything();
+
+                    // 持续巡检：针对插件异步加载和 iPad 旋转
+                    if (!window.wikiSyncTimer) {
+                        window.wikiSyncTimer = setInterval(() => {
+                            moveSearchBox();
+                            syncEverything();
+                        }, 1000);
+                    }
+                });
+            }
+        ]
+    }
+
+    // 2. 处理初始状态（移动端默认关闭）
     if (window.innerWidth <= 1024) {
         document.documentElement.classList.add('close');
         document.body.classList.add('close');
     }
-</script>
-<script>
-    window.addEventListener('DOMContentLoaded', () => {
+
+    // 3. 点击外部自动收起（移动端专用）
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth > 1024) return;
         const body = document.body;
         const sidebar = document.querySelector('.sidebar');
-
-        const updateSidebar = () => {
-            const isMobile = window.innerWidth <= 768;
-            if (!isMobile) return;
-
-            // Docsify 在移动端打开时 body 会去掉 .close 类名
-            const isOpen = !body.classList.contains('close');
-
-            if (isOpen) {
-                // 强行把侧边栏拉回视野，并确保层级最高
-                sidebar.style.setProperty('transform', 'translateX(0)', 'important');
-                sidebar.style.setProperty('visibility', 'visible', 'important');
-                sidebar.style.setProperty('opacity', '1', 'important');
-            } else {
-                // 强行推出去
-                sidebar.style.setProperty('transform', 'translateX(-100%)', 'important');
-            }
-        };
-
-        // 1. 初始化执行一次
-        updateSidebar();
-
-        // 2. 监听 body 类名的变化
-        const observer = new MutationObserver(updateSidebar);
-        observer.observe(body, { attributes: true, attributeFilter: ['class'] });
-
-        // 3. 窗口缩放时也检查一下
-        window.addEventListener('resize', updateSidebar);
+        const toggleBtn = document.querySelector('.sidebar-toggle');
+        if (!body.classList.contains('close') &&
+            sidebar && !sidebar.contains(e.target) &&
+            toggleBtn && !toggleBtn.contains(e.target)) {
+            toggleBtn.click();
+        }
     });
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/docsify@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/js/docsify-themeable.min.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/prismjs@1/prism.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-python.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-yaml.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/docsify/lib/plugins/zoom-image.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/medium-zoom@1/dist/medium-zoom.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/docsify-pagination/dist/docsify-pagination.min.js"></script>
 <script src="//unpkg.com/docsify-count/dist/countable.min.js"></script>
 
