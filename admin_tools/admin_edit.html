@@ -176,37 +176,45 @@
             async submitSave() {
                 if (this.isSaving) return;
 
-                // 严格按照 PortalAuth 的格式读取
+                // 1. 认证检查
                 const raw = localStorage.getItem('gh_auth');
                 const auth = raw ? JSON.parse(raw) : null;
-
                 const token = auth?.token;
 
                 if (!token) {
-                    console.error("[Auth] No valid session found in gh_auth");
                     alert("❌ 认证失效：请返回主页重新登录");
                     return;
                 }
 
                 this.isSaving = true;
 
-                // 准备提交数据
-                const cleanData = JSON.parse(JSON.stringify(this.editForm));
+                // 2. 数据标准化处理 (对齐上传端 infoJson 逻辑)
+                const source = this.editForm;
                 const stripPath = (s) => (s && typeof s === 'string' && s.includes('/')) ? s.split('/').pop() : s;
 
-                cleanData.preview = stripPath(cleanData.preview);
-                cleanData.filename = stripPath(cleanData.filename);
+                // 强制构造标准格式，确保 Key 的顺序和名称完全一致
+                const finalInfoJson = {
+                    "id": source.id,
+                    "name": source.name,
+                    "author": source.author || '匿名',
+                    "tags": Array.isArray(source.tags) ? source.tags : [],
+                    "description": source.description,
+                    "folder": source.folder || source.name.replace(/[#\\/:*?"<>|]/g, '_'), // 确保 folder 字段存在
+                    "preview": stripPath(source.preview) || "preview.png",
+                    "filename": stripPath(source.filename),
+                    "submitDate": source.submitDate || new Date().toISOString()
+                };
 
                 try {
                     const res = await fetch(`${this.WORKER_URL}/api/admin/update-info`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}` // 发送 access_token
+                            'Authorization': `Bearer ${token}`
                         },
                         body: JSON.stringify({
-                            folder: cleanData.id,
-                            newInfo: cleanData
+                            folder: source.id,
+                            newInfo: finalInfoJson
                         })
                     });
 
@@ -215,7 +223,7 @@
                         window.location.href = '../archive.html';
                     } else {
                         const err = await res.json();
-                        alert("❌ 提交失败: " + (err.error || "Worker 拒绝了请求"));
+                        alert("❌ 提交失败: " + (err.error || "服务器拒绝了请求"));
                     }
                 } catch (e) {
                     alert("❌ 网络错误: " + e.message);
