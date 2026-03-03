@@ -195,7 +195,7 @@
 
                 // 强制构造标准格式，确保 Key 的顺序和名称完全一致
                 const finalInfoJson = {
-                    "id": `sub-${now.getTime()}`,
+                    "id": source.id,
                     "name": source.name,
                     "author": source.author || '匿名',
                     "tags": Array.isArray(source.tags) ? source.tags : [],
