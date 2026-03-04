@@ -149,7 +149,18 @@
             return {
                 isSaving: false,
                 TAG_CONFIG,
-                editForm: { id: '', name: '', author: '', tags: [], description: '', preview: '', filename: '' },
+                editForm: {
+                    id: '',
+                    sub_id: '',
+                    name: '',
+                    author: '',
+                    tags: [],
+                    description: '',
+                    preview: '',
+                    filename: '',
+                    folder: '',
+                    submitDate: ''
+                },
                 WORKER_URL: 'https://openstsubmission.linvin.net'
             }
         },
@@ -195,7 +206,7 @@
 
                 // 强制构造标准格式，确保 Key 的顺序和名称完全一致
                 const finalInfoJson = {
-                    "id": source.sub_id,
+                    "id": source.sub_id || source.id,
                     "name": source.name,
                     "author": source.author || '匿名',
                     "tags": Array.isArray(source.tags) ? source.tags : [],
