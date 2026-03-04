@@ -17,7 +17,7 @@ const UploadApp = {
                 name: '',
                 author: '',
                 contact: '',
-                desc: `### 🚀 机器概览（示例）\n- **核心功能**: \n- **适用版本**: Java 1.20.x\n\n### 📖 使用说明\n1. 说明1\n2. 说明2\n\n> 提示：本机器支持横向堆叠。`,
+                desc: `### 🚀 机器概览（示例）\n- **核心功能**: \n- **适用版本**: Java 1.20.x\n\n### 📖 使用说明\n1. 在非原版特性端使用时，请先测试机器能否正常工作后再进行实装\n2. 说明2\n\n> 提示：本机器支持横向堆叠。`,
                 tags: [],
                 previewFile: null,
                 litematicFile: null
@@ -130,8 +130,6 @@ const UploadApp = {
                 const previewFileName = `preview.${previewExt}`;
                 const now = new Date();
                 const originalFileName = this.form.litematicFile.name;
-
-                // 2. 标准格式 info.json (已对齐示例格式)
                 const infoJson = {
                     "id": `sub-${now.getTime()}`,
                     "name": this.form.name,
