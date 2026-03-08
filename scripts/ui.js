@@ -198,7 +198,7 @@ export const DetailModal = {
             </button>
 
           <div class="flex flex-col md:flex-row w-full overflow-y-auto md:overflow-visible">
-            <div class="w-full md:w-3/5 ...">
+            <div class="w-full md:w-3/5 bg-black/20 flex items-center justify-center border-b md:border-b-0 md:border-r border-white/5 p-4 md:p-10 md:sticky md:top-0 h-auto md:h-[90vh]">
               <img :src="$parent.getPreviewUrl(item)"
                    @click.stop="$root.handleImageZoom($event)"
                    class="w-full h-auto md:max-h-full object-contain rounded-xl shadow-2xl cursor-zoom-in">
