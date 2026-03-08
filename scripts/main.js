@@ -141,7 +141,7 @@ const AppOptions = {
             if (!item) return '';
             const safePath = this.getSafePath(`archive/${item.id}/${item.filename}`);
             const raw = `https://raw.githubusercontent.com/MC-OpenST/website/main/${safePath}`;
-            return this.useProxy ? `https://ghfast.top/${raw}` : raw;
+            return this.useProxy ? `https://cdn.linvin.net/${raw}` : raw;
         },
 
         getPreviewUrl(item) {
