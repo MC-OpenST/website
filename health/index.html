@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统状态 | OpenST Portal</title>
+    <script src="https://cdn.jsdmirror.com/gh/MC-OpenST/website@main/tailwind.js"></script>
+    <link rel="icon" href="../images/favicon.png">
+    <link rel="apple-touch-icon" href="../images/favicon.png">
+    <style>
+        @keyframes pulse-custom {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(0.95); }
+        }
+    </style>
+</head>
+<body class="bg-black text-gray-200 min-h-screen font-sans bg-grid">
+
+<div class="max-w-3xl mx-auto px-6 py-12">
+    <header class="flex justify-between items-center mb-12 backdrop-blur-sm bg-black/40 p-4 rounded-xl border border-white/5">
+        <div>
+            <h1 class="text-2xl font-bold text-white tracking-tight">OpenST System Status</h1>
+            <p class="text-gray-500 text-sm mt-1">独立外部监控节点 (Global Edge)</p>
+        </div>
+        <div id="global-badge" class="px-3 py-1 rounded-full text-xs font-medium bg-gray-800 text-gray-400">
+            正在初始化...
+        </div>
+    </header>
+
+    <div id="main-status" class="bg-zinc-900 border border-zinc-800 rounded-2xl p-10 mb-8 text-center shadow-2xl transition-all duration-500">
+        <div class="inline-block p-4 rounded-full bg-zinc-800 mb-4">
+            <div id="main-dot" class="w-4 h-4 rounded-full bg-gray-600 transition-colors duration-500"></div>
+        </div>
+        <h2 id="main-text" class="text-xl font-semibold text-white">正在读取边缘数据...</h2>
+        <p id="main-desc" class="text-gray-500 text-sm mt-2">正在通过独立节点拨测全球服务可用性</p>
+    </div>
+
+    <div class="grid gap-4">
+        <div class="bg-zinc-900/60 backdrop-blur-md border border-zinc-800 p-5 rounded-xl flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div id="portal-dot" class="w-2.5 h-2.5 rounded-full bg-gray-600"></div>
+                <div>
+                    <div class="text-white font-medium text-sm">Portal 主站</div>
+                    <div class="text-[10px] text-gray-500 uppercase tracking-widest">Vercel Edge Network</div>
+                </div>
+            </div>
+            <div id="portal-ping" class="text-sm font-mono text-gray-400">-- ms</div>
+        </div>
+
+        <div class="bg-zinc-900/60 backdrop-blur-md border border-zinc-800 p-5 rounded-xl">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-4">
+                    <div id="api-dot" class="w-2.5 h-2.5 rounded-full bg-gray-600"></div>
+                    <div>
+                        <div class="text-white font-medium text-sm">API Hub 中继</div>
+                        <div class="text-[10px] text-gray-500 uppercase tracking-widest">Cloudflare Workers</div>
+                    </div>
+                </div>
+                <div id="api-ping" class="text-sm font-mono text-gray-400">-- ms</div>
+            </div>
+            <div class="flex gap-2">
+                <span id="api-node" class="text-[10px] font-mono bg-black/40 px-2 py-1 rounded border border-white/5 text-gray-500 tracking-tighter">NODE: --</span>
+                <span id="api-upstream" class="text-[10px] font-mono bg-black/40 px-2 py-1 rounded border border-white/5 text-gray-500 tracking-tighter">UPSTREAM: --</span>
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-12 pt-8 border-t border-zinc-800/50 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div class="text-xs text-gray-600 font-mono">
+            &copy; 2026 OPENST &bull; AUTO_REFRESH: 30S
+        </div>
+        <div class="flex gap-3">
+            <button onclick="copyDebugInfo()" class="text-[11px] bg-zinc-800 text-gray-300 px-4 py-2 rounded-lg hover:bg-zinc-700 transition">
+                复制诊断信息
+            </button>
+            <button onclick="check()" class="text-[11px] bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-200 transition font-bold">
+                手动刷新
+            </button>
+        </div>
+    </footer>
+</div>
+
+<script>
+    const PORTAL_URL = 'https://openst.qzz.io/archive/不要动这是占位符！.txt';
+    const API_HEALTH_URL = 'https://openstsubmission.linvin.net/health';
+
+    let lastData = { portal: null, api: null };
+
+    // 带超时的 Fetch
+    async function fetchWithTimeout(url, options = {}, timeout = 6000) {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeout);
+        try {
+            const response = await fetch(url, { ...options, signal: controller.signal });
+            clearTimeout(id);
+            return response;
+        } catch (e) {
+            clearTimeout(id);
+            throw e;
+        }
+    }
+
+    async function updateUI(elId, status, ping = null) {
+        const dot = document.getElementById(elId + '-dot');
+        const text = document.getElementById(elId + '-ping');
+        if (status === 'online') {
+            dot.className = 'w-2.5 h-2.5 rounded-full bg-green-500 dot-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]';
+            if (text) text.innerText = ping + ' ms';
+        } else {
+            dot.className = 'w-2.5 h-2.5 rounded-full bg-red-600';
+            if (text) text.innerText = 'TIMEOUT';
+        }
+    }
+
+    async function check() {
+        if (!navigator.onLine) {
+            showMajorStatus('offline');
+            return;
+        }
+
+        const vStart = Date.now();
+        const portalPromise = fetchWithTimeout(PORTAL_URL, { mode: 'no-cors', cache: 'no-store' })
+            .then(() => ({ ok: true, ping: Date.now() - vStart }))
+            .catch(() => ({ ok: false }));
+
+        const wStart = Date.now();
+        const apiPromise = fetchWithTimeout(API_HEALTH_URL, { cache: 'no-store' })
+            .then(r => r.json())
+            .then(data => ({ ok: true, ping: Date.now() - wStart, ...data }))
+            .catch(() => ({ ok: false }));
+
+        const [portal, api] = await Promise.all([portalPromise, apiPromise]);
+        lastData = { portal, api };
+
+        updateUI('portal', portal.ok ? 'online' : 'offline', portal.ping);
+        updateUI('api', api.ok ? 'online' : 'offline', api.ping);
+
+        if (api.ok) {
+            document.getElementById('api-node').innerText = `NODE: ${api.region}`;
+            document.getElementById('api-upstream').innerText = `UPSTREAM: ${api.upstream}`;
+        }
+
+        // 判定逻辑
+        if (portal.ok && api.ok) {
+            showMajorStatus('operational');
+        } else if (!portal.ok && !api.ok) {
+            showMajorStatus('major_outage');
+        } else {
+            showMajorStatus('partial_outage');
+        }
+    }
+
+    function showMajorStatus(type) {
+        const mainText = document.getElementById('main-text');
+        const mainDot = document.getElementById('main-dot');
+        const badge = document.getElementById('global-badge');
+        const desc = document.getElementById('main-desc');
+
+        const configs = {
+            operational: {
+                text: '所有系统运行正常',
+                dot: 'bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.5)]',
+                badge: 'bg-green-900/30 text-green-400',
+                badgeText: 'SYSTEM OPERATIONAL',
+                desc: '当前所有服务均处于最佳运行状态'
+            },
+            partial_outage: {
+                text: '部分服务响应异常',
+                dot: 'bg-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.4)]',
+                badge: 'bg-yellow-900/30 text-yellow-400',
+                badgeText: 'PARTIAL OUTAGE',
+                desc: '核心功能可用，但部分链路存在延迟或抖动'
+            },
+            major_outage: {
+                text: '核心服务完全失联',
+                dot: 'bg-red-600 shadow-[0_0_20px_rgba(220,38,38,0.6)] dot-pulse',
+                badge: 'bg-red-900/40 text-red-500 font-bold',
+                badgeText: 'MAJOR OUTAGE',
+                desc: '检测到大面积服务中断，技术团队可能正在处理'
+            },
+            offline: {
+                text: '本地网络连接断开',
+                dot: 'bg-zinc-600',
+                badge: 'bg-zinc-800 text-zinc-500',
+                badgeText: 'LOCAL OFFLINE',
+                desc: '请检查您的设备网络连接后再试'
+            }
+        };
+
+        const config = configs[type];
+        mainText.innerText = config.text;
+        mainText.className = `text-xl font-semibold ${type === 'operational' ? 'text-green-500' : type === 'major_outage' ? 'text-red-500' : 'text-yellow-500'}`;
+        mainDot.className = `w-4 h-4 rounded-full transition-all duration-700 ${config.dot}`;
+        badge.innerText = config.badgeText;
+        badge.className = `px-3 py-1 rounded-full text-xs font-medium transition-colors ${config.badge} `;
+        desc.innerText = config.desc;
+    }
+
+    function copyDebugInfo() {
+        const info = `OpenST Status Report\n---\nPortal: ${lastData.portal?.ok ? lastData.portal.ping + 'ms' : 'Error'}\nAPI: ${lastData.api?.ok ? lastData.api.ping + 'ms' : 'Error'}\nNode: ${lastData.api?.region || 'Unknown'}\nUpstream: ${lastData.api?.upstream || 'Unknown'}\nTime: ${new Date().toISOString()}`;
+        navigator.clipboard.writeText(info).then(() => alert('诊断信息已复制到剪贴板'));
+    }
+
+    check();
+    setInterval(check, 30000);
+</script>
+</body>
+</html>
