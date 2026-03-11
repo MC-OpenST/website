@@ -140,10 +140,6 @@ export default async function (request) {
 
         return new Response("OpenST Hub Online", { headers: getCORSHeaders() });
 
-        return new Response(JSON.stringify({ hello: "world" }), {
-            headers: { "Content-Type": "application/json" }
-        });
-
     } catch (err) {
         return new Response(JSON.stringify({ error: err.message }), {
             status: 500,
