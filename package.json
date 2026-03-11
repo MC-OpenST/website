@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "preview": "vite preview",
-    "build": "node scripts/build.js",
+    "build": "node scripts/build.js && vite build",
     "add": "node scripts/init.js"
   },
   "dependencies": {
