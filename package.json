@@ -10,6 +10,7 @@
     "add": "node scripts/init.js"
   },
   "dependencies": {
+    "sharp": "^0.34.5",
     "vue": "^3.5.27"
   },
   "devDependencies": {
