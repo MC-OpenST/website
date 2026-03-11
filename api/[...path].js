@@ -2,7 +2,7 @@
 export const runtime = 'edge';
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const CHAT_ID = process.env.CHAT_ID;
+const CHAT_ID   = process.env.CHAT_ID;
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const GH_REPO = 'MC-OpenST/website';
@@ -10,11 +10,11 @@ const TG_API_BASE = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 export default async function (request) {
     const url = new URL(request.url);
-    const path = url.pathname; // 完整路径
+    const path = url.pathname;
     if (request.method === "OPTIONS") return handleCORS();
 
     try {
-        // /api/exchange-token
+        // OAuth 令牌交换
         if (path === '/api/exchange-token') {
             const code = url.searchParams.get('code');
             if (!code) return new Response(JSON.stringify({ error: "Missing code" }), { status: 400, headers: getJSONCORS() });
@@ -36,7 +36,7 @@ export default async function (request) {
             return new Response(JSON.stringify(tokenData), { headers: getJSONCORS() });
         }
 
-        // /api/check-admin
+        // 管理员校验
         if (path === '/api/check-admin') {
             const token = request.headers.get('Authorization')?.replace('Bearer ', '');
             if (!token) return new Response("Unauthorized", { status: 401, headers: getCORSHeaders() });
@@ -48,7 +48,7 @@ export default async function (request) {
             return new Response(JSON.stringify({ isAdmin: repoData.permissions?.push === true }), { headers: getJSONCORS() });
         }
 
-        // /api/admin/update-info
+        // 管理员修改数据
         if (path === '/api/admin/update-info' && request.method === 'POST') {
             const token = request.headers.get('Authorization')?.replace('Bearer ', '');
             if (!token) return new Response("Missing Token", { status: 401, headers: getCORSHeaders() });
@@ -59,7 +59,7 @@ export default async function (request) {
             if (!fileRes.ok) return new Response("Find info.json failed", { status: 404, headers: getCORSHeaders() });
 
             const fileData = await fileRes.json();
-            const base64Content = btoa(JSON.stringify(newInfo, null, 4));
+            const base64Content = Buffer.from(JSON.stringify(newInfo, null, 4), 'utf-8').toString('base64');
             const putRes = await fetch(infoUrl, {
                 method: 'PUT',
                 headers: { 'Authorization': `token ${token}`, 'User-Agent': 'OpenST-Portal', 'Content-Type': 'application/json' },
@@ -70,21 +70,19 @@ export default async function (request) {
             return new Response(JSON.stringify({ success: putRes.ok, github: finalResult }), { headers: getJSONCORS() });
         }
 
-        // 投稿中继 POST /
+        // 投稿中继
         if (request.method === 'POST' && path === '/') {
             const fd = await request.formData();
             const zipFile = fd.get('zip');
             const previewFile = fd.get('preview');
             const name = fd.get('name');
 
-            // 先发送预览图
             const photoFd = new FormData();
             photoFd.append('chat_id', CHAT_ID);
             photoFd.append('photo', previewFile);
             photoFd.append('caption', `📦 新投稿：${name}`);
             await fetch(`${TG_API_BASE}/sendPhoto`, { method: 'POST', body: photoFd });
 
-            // 再发送文件
             const docFd = new FormData();
             docFd.append('chat_id', CHAT_ID);
             docFd.append('document', zipFile);
@@ -97,7 +95,7 @@ export default async function (request) {
             return new Response(JSON.stringify({ success: true, filePath: fileInfo.result.file_path }), { headers: getJSONCORS() });
         }
 
-        // 下载代理 /dl/*
+        // 下载代理
         if (path.startsWith('/dl/')) {
             const telegramPath = path.replace('/dl/', '');
             const resp = await fetch(`https://api.telegram.org/file/bot${BOT_TOKEN}/${telegramPath}`);
@@ -106,7 +104,7 @@ export default async function (request) {
             return newRes;
         }
 
-        // Wiki 提交 /api/wiki/submit-archive
+        // Wiki 提交
         if (path === '/api/wiki/submit-archive' && request.method === 'POST') {
             const fd = await request.formData();
             const zipFile = fd.get('file');
@@ -148,12 +146,13 @@ export default async function (request) {
         }
 
         return new Response("OpenST Hub Online", { headers: getCORSHeaders() });
+
     } catch (err) {
         return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: getJSONCORS() });
     }
 }
 
-// -------------------
+// CORS Helpers
 function getCORSHeaders() {
     return {
         "Access-Control-Allow-Origin": "*",
@@ -167,12 +166,3 @@ function getJSONCORS() {
 }
 
 function handleCORS() { return new Response(null, { headers: getCORSHeaders() }); }
-
-if (url.pathname === '/api/debug-env') {
-    return new Response(JSON.stringify({
-        BOT_TOKEN: !!BOT_TOKEN,
-        CLIENT_ID: !!CLIENT_ID,
-        CLIENT_SECRET: !!CLIENT_SECRET,
-        CHAT_ID: !!CHAT_ID
-    }), { headers: { "Content-Type": "application/json" }});
-}
