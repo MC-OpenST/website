@@ -167,3 +167,12 @@ function getJSONCORS() {
 }
 
 function handleCORS() { return new Response(null, { headers: getCORSHeaders() }); }
+
+if (url.pathname === '/api/debug-env') {
+    return new Response(JSON.stringify({
+        BOT_TOKEN: !!BOT_TOKEN,
+        CLIENT_ID: !!CLIENT_ID,
+        CLIENT_SECRET: !!CLIENT_SECRET,
+        CHAT_ID: !!CHAT_ID
+    }), { headers: { "Content-Type": "application/json" }});
+}
