@@ -21,8 +21,8 @@ none --- Trice450
 ## 基础设施 (Infrastructure)
 * GitHub
 * Cloudflare
-* jsMirror
-* NCS (NoCopyrightSounds)  
+* jsdMirror
+* Edgeone
 * Vercel
 
 ## 贡献者（Authors）  
