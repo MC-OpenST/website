@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0"/>
+    <title>OpenST | Litematic Viewer</title>
+
+    <script src="https://unpkg.com/deepslate@0.10.1"></script>
+    <script src="https://unpkg.com/gl-matrix@3.4.3/gl-matrix-min.js"></script>
+    <script src="resource/assets.js"></script>
+    <script src="resource/opaque.js"></script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/92330e144e.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --primary: #40B5AD;
+            --bg-dark: #0c0c0c;
+            --panel-bg: rgba(20, 20, 20, 0.85);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #e0e0e0;
+            font-family: 'Inter', -apple-system, sans-serif;
+            overflow: hidden;
+            margin: 0;
+        }
+
+        /* 3D 背景层 */
+        #viewer {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
+        }
+
+        /* 玻璃拟态面板 */
+        .glass-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            transition: all 0.5s ease;
+        }
+
+        #drop-zone {
+            display: block;
+            border: 2px dashed rgba(64, 181, 173, 0.3);
+            border-radius: 20px;
+            padding: 40px 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        #drop-zone:hover {
+            border-color: var(--primary);
+            background: rgba(64, 181, 173, 0.05);
+            transform: translateY(-2px);
+        }
+
+        #settings-panel {
+            height: 100%; width: 0; position: fixed; z-index: 100;
+            top: 0; right: 0; background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(20px); overflow-x: hidden;
+            transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 1px solid rgba(64, 181, 173, 0.2);
+        }
+
+        /* 隐藏滚动条 */
+        #materialList::-webkit-scrollbar { width: 4px; }
+        #materialList::-webkit-scrollbar-thumb { background: var(--primary); }
+
+        .count-item {
+            background: rgba(0, 0, 0, 0.6) !important;
+            margin-bottom: 4px; border-radius: 4px;
+            border-left: 2px solid var(--primary);
+            font-size: 12px; padding: 6px 12px !important;
+        }
+
+        .top-bar {
+            position: fixed; top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            z-index: 50;
+        }
+    </style>
+</head>
+
+<body>
+<div class="top-bar"></div>
+
+<div id="viewer"></div>
+
+<div id="loading-overlay" class="fixed inset-0 z-[999] bg-black/80 flex justify-center items-center hidden">
+    <div class="flex flex-col items-center">
+        <div class="spinner border-4 border-t-[#40B5AD] border-white/20 rounded-full w-12 h-12 animate-spin mb-4"></div>
+        <p class="text-[#40B5AD] font-mono text-xs tracking-widest">DECODING_NBT...</p>
+    </div>
+</div>
+
+<button id="materialListButton" class="fixed top-20 left-6 z-20 text-white/50 hover:text-[#40B5AD] transition-colors" hidden onclick="toggleMaterialList()">
+    <span class="material-icons" style="font-size: 32px;">inventory_2</span>
+</button>
+<div id="materialList" class="fixed top-32 left-6 p-2 hidden z-20 glass-panel max-h-[60vh] overflow-y-auto w-64"></div>
+
+<div id="sliders" class="fixed bottom-10 right-10 flex gap-4 z-50"></div>
+
+<a href="javascript:void(0)" id="settings-button" class="fixed top-6 right-8 z-[110] text-white/50 hover:text-[#40B5AD] transition-all" onclick="openSettings()">
+    <i class="fa fa-cog"></i>
+</a>
+
+<div id="main-content" class="relative z-10 flex flex-col items-center justify-center min-h-screen p-6 transition-all duration-700">
+    <div class="glass-panel max-w-2xl w-full p-10 text-center">
+        <h1 class="text-3xl font-black tracking-tighter mb-2 text-[#40B5AD] italic">投影预览系统</h1>
+        <p class="text-xs font-mono text-white/40 mb-10 uppercase tracking-[0.3em]">Litematic Preview</p>
+
+        <div id="file-loader-panel">
+            <input id="file-upload" type="file" onchange="readFileInput(this)" hidden />
+            <label for="file-upload" id="drop-zone" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);">
+                <div class="flex flex-col items-center pointer-events-none">
+                    <i class="material-icons text-5xl text-[#40B5AD] mb-4">cloud_upload</i>
+                    <h3 class="text-xl font-bold mb-1">选择投影</h3>
+                    <p class="text-sm text-white/40">选择/拖拽.litematic文件</p>
+                </div>
+            </label>
+
+            <div class="mt-12">
+                <div class="relative group">
+                    <input id="remote-url-input" type="text" placeholder="Paste remote link here..."
+                           class="w-full bg-white/5 border-b border-white/10 p-4 focus:outline-none focus:border-[#40B5AD] transition-all font-mono text-sm">
+                    <button class="absolute right-2 top-2 p-2 text-[#40B5AD]" onclick="submitRemoteFile()">
+                        <i class="material-icons">send</i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="settings-panel">
+    <a href="javascript:void(0)" class="absolute top-6 right-6 text-3xl text-white/50 hover:text-white" onclick="closeSettings()">&times;</a>
+    <div class="p-8">
+        <h3 class="text-xl font-bold text-[#40B5AD] mb-8 font-mono">设置</h3>
+        <button class="w-full py-3 mb-10 bg-red-900/40 border border-red-500/50 text-red-200 text-xs font-bold uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all"
+                onclick="history.replaceState(null, '', ' '); location.reload();">
+            取消预览
+        </button>
+        <div id="settings-container" class="space-y-6"></div>
+    </div>
+</div>
+
+<img id="atlas" src="resource/atlas.png" crossorigin="anonymous" hidden>
+
+<script src="src/deepslate-helpers.js"></script>
+<script src="src/litematic-utils.js"></script>
+<script src="src/viewer.js"></script> <script src="src/main.js"></script>
+<script src="src/settings.js"></script>
+
+<script>
+    // 初始化 UI 交互逻辑
+    document.addEventListener("DOMContentLoaded", () => {
+        const image = document.getElementById('atlas');
+        const initResources = () => loadDeepslateResources(image);
+
+        if (image.complete) initResources();
+        else image.addEventListener('load', initResources);
+
+        // 执行哈希路由检查
+        handleHashRoute();
+    });
+
+    // #https://...
+    function handleHashRoute() {
+        const hash = window.location.hash.substring(1); // 去掉开头的 #
+        if (hash && hash.startsWith('http')) {
+            console.log(`🚀 发现哈希路由: ${hash}`);
+
+            // 同步显示到输入框（视觉反馈）
+            const urlInput = document.getElementById('remote-url-input');
+            if (urlInput) urlInput.value = hash;
+
+            readFileURL(hash);
+        }
+    }
+
+    // 监听地址栏手动修改
+    window.addEventListener('hashchange', handleHashRoute);
+    // 文件上传统一入口 (适配 File 和 Blob)
+    function handleFileSelection(file) {
+        if (!file) return;
+        showLoading();
+
+        // 隐藏主面板的动画
+        const main = document.getElementById('main-content');
+        main.classList.add('opacity-0', 'pointer-events-none', 'scale-95');
+
+        if (typeof loadAndProcessFile === 'function') {
+            loadAndProcessFile(file);
+        }
+    }
+
+    function readFileInput(input) {
+        if (input.files && input.files[0]) handleFileSelection(input.files[0]);
+    }
+
+    function dropHandler(ev) {
+        ev.preventDefault();
+        const file = ev.dataTransfer.items ? ev.dataTransfer.items[0].getAsFile() : ev.dataTransfer.files[0];
+        handleFileSelection(file);
+    }
+
+    function dragOverHandler(ev) { ev.preventDefault(); }
+
+    function submitRemoteFile() {
+        const urlInput = document.getElementById('remote-url-input');
+        const url = urlInput.value.trim();
+        if (url) {
+            readFileURL(url);
+        } else {
+            alert("请先输入有效的 URL 链接");
+        }
+    }
+
+    function readFileURL(url) {
+        showLoading();
+        console.log(`正在发起请求: ${url}`);
+
+        // 直接 Fetch，不经过任何中转
+        fetch(url, { mode: 'cors' })
+            .then(res => {
+                if (!res.ok) throw new Error(`服务器响应失败: ${res.status}`);
+                return res.blob();
+            })
+            .then(blob => {
+                // 将 Blob 传递给解析引擎
+                handleFileSelection(blob);
+            })
+            .catch(err => {
+                console.error("失败:", err);
+                alert("远程加载失败。请检查：\n1. 链接是否正确\n2. 目标服务器是否允许 CORS 跨域访问");
+                hideLoading();
+                // 恢复 UI 状态
+                const main = document.getElementById('main-content');
+                main.classList.remove('opacity-0', 'pointer-events-none', 'scale-95');
+            });
+    }
+
+    function showLoading() { document.getElementById('loading-overlay').classList.remove('hidden'); }
+    function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
+
+    function toggleMaterialList() {
+        document.getElementById('materialList').classList.toggle('hidden');
+    }
+</script>
+</body>
+</html>
