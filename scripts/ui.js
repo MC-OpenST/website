@@ -247,8 +247,6 @@ export const DetailModal = {
                         </svg>
                         投影预览
                       </button>
-
-                      <a :href="$parent.getDownloadLink(item)" class="..."></a>
                         <div class="flex items-center justify-between px-4 py-3 bg-white/5 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
                             <div class="flex items-center gap-3 text-left">
                                 <div class="w-8 h-8 rounded-full bg-brand/10 flex items-center justify-center text-brand">
