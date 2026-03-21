@@ -237,6 +237,9 @@
                 const database = await res.json();
                 const item = database.find(i => i.id === folder);
                 if (item) this.editForm = JSON.parse(JSON.stringify(item));
+                if (!this.editForm.folder) {
+                    this.editForm.folder = folderParam;
+                }
             } catch (e) { console.error("Load failed", e); }
         },
         methods: {
@@ -247,6 +250,7 @@
 
             // 更换预览图
             async handlePreviewChange(e) {
+                console.log("当前稿件文件夹:", this.editForm.folder);
                 const file = e.target.files[0];
                 if (!file) return;
                 const reader = new FileReader();
