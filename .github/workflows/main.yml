@@ -1,12 +1,12 @@
 name: Auto Rebuild Database
 on:
   push:
-    # 逻辑：只有当 archive 文件夹里的内容，或者脚本本身变动时才触发
+    branches:
+      - main
     paths:
       - 'archive/**'
       - 'scripts/build.js'
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   build:
@@ -33,6 +33,6 @@ jobs:
       - name: Commit and Push Changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: 自动更新数据库 [skip ci]"
-          file_pattern: 'data/database.json'
+          commit_message: "chore: 自动更新数据库及预览图 [skip ci]"
+          file_pattern: 'data/database.json archive/**/*.webp'
           # [skip ci] 很重要，防止 Action 自己触发自己导致死循环
