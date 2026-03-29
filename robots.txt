@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://openst.qzz.io/sitemap.xml
