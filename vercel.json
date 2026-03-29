@@ -1,0 +1,5 @@
+{
+  "redirects": [
+    { "source": "/(.*)", "destination": "https://openst.qzz.io/$1", "permanent": true }
+  ]
+}
