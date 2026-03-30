@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "vite",
     "preview": "vite preview",
-    "build": "node scripts/build.js && vite build",
+    "build": "npm run deploy-prep && node scripts/build.js && vite build",
     "add": "node scripts/init.js",
     "build:css": "tailwindcss -i ./input.css -o ./output.css --minify",
-    "build:sitemap": "node scripts/generate-sitemap.js",
+    "build:sitemap": "node scripts/sitemap.js",
     "deploy-prep": "npm run build:css && npm run build:sitemap"
   },
   "dependencies": {
