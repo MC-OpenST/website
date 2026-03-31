@@ -8,5 +8,11 @@ export default defineConfig({
     port: 4000,
     open: true,
     cors: true
+  },
+  rollupOptions: {
+    input: {
+      upload: 'upload.html',
+      archive: 'archive.html'
+    }
   }
 })

@@ -1,0 +1,9 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/archive/", "destination": "/archive.html" },
+    { "source": "/archive", "destination": "/archive.html" },
+    { "source": "/upload", "destination": "/upload.html"},
+    { "source": "/upload/", "destination": "upload.html"}
+  ]
+}
