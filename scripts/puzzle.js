@@ -11,7 +11,7 @@
     }
     console.log("%c 🧩 [System] Dimension synchronizing...", "color: #40B5AD; font-weight: bold;");
 
-    const TARGET_SUB_ID = "sub-1772764832049";
+    const TARGET_SUB_ID = "sub-1772558708871";
 
     const initPuzzle = () => {
         const path = window.location.pathname;
