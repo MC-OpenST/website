@@ -6,4 +6,8 @@
     --color-panel: #2a2c2d;
 }
 
+:root {
+    --brand: #40B5AD;
+}
+
 [v-cloak] { display: none !important; }
