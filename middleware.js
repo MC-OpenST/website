@@ -66,5 +66,5 @@ export async function middleware(req) {
 }
 
 export const config = {
-    matcher: ['/', '/index.html', '/archive', '/archive.html'],
+    matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
