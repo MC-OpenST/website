@@ -163,7 +163,7 @@ export const ArchiveCard = {
         </button>
 
         <div class="aspect-[16/9] overflow-hidden relative cursor-pointer bg-black/20" @click="$emit('open', item)">
-            <img v-lazy="$parent.getPreviewUrl(item)"
+            <img v-lazy="item.preview"
                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" fetchpriority="high">
             <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
         </div>
@@ -229,7 +229,7 @@ export const DetailModal = {
 
           <div class="flex flex-col md:flex-row w-full overflow-y-auto md:overflow-visible">
             <div class="w-full md:w-3/5 bg-black/20 flex items-center justify-center border-b md:border-b-0 md:border-r border-white/5 p-4 md:p-10 md:sticky md:top-0 h-auto md:h-[90vh]">
-              <img :src="$parent.getPreviewUrl(item)"
+              <img :src="item.preview"
                    @click.stop="$root.handleImageZoom($event)"
                    class="w-full h-auto md:max-h-full object-contain rounded-xl shadow-2xl cursor-zoom-in">
             </div>

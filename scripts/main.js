@@ -153,12 +153,6 @@ const AppOptions = {
             return this.useProxy ? `https://cdn.linvin.net/${finalRaw}` : raw;
         },
 
-        getPreviewUrl(item) {
-            if (!item || !item.preview) return '';
-            const rawPath = decodeURIComponent(item.preview);
-            return `${rawPath}`;
-        },
-
         // 编辑跳转逻辑
         openEdit(item) {
             if (!item || !item.id) return;
