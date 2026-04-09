@@ -1,74 +1,70 @@
 // middleware.js
 export async function middleware(req) {
     const url = new URL(req.url);
-    // 获取 ? 后的内容，例如 ?sub-1772764832049
-    const subId = url.search.replace('?', '');
     const ua = req.headers.get('user-agent') || '';
 
-    // 1. 识别社交媒体爬虫
+    // 1. 更健壮的 subId 提取
+    let subId = null;
+    for (const key of url.searchParams.keys()) {
+        if (key.startsWith('sub-')) {
+            subId = key;
+            break;
+        }
+    }
+
     const isBot = /discordbot|twitterbot|facebookexternalhit|whatsapp|googlebot|telegrambot/i.test(ua);
 
-    // 2. 只有当它是爬虫且路径匹配时才拦截
-    if (isBot && subId.startsWith('sub-')) {
+    if (isBot && subId) {
         try {
-            // 获取数据库 (使用绝对路径 fetch)
-            const res = await fetch(`${url.origin}/data/database.json`);
-            if (!res.ok) throw new Error('Failed to fetch database');
+            // 使用绝对路径，加上缓存失效参数防止 Middleware 读到旧数据
+            const dbRes = await fetch(`${url.origin}/data/database.json?v=${Date.now()}`);
+            if (!dbRes.ok) return;
 
-            const database = await res.json();
+            const database = await dbRes.json();
             const item = database.find(i => i.sub_id === subId);
 
             if (item) {
-                // 3. 动态拼接绝对路径预览图
                 const domain = url.origin;
+                // 对每一段路径进行编码，防止中文路径断裂
                 const safePreviewPath = item.preview.split('/')
                     .map(segment => encodeURIComponent(segment))
                     .join('/');
                 const absoluteImageUrl = `${domain}/${safePreviewPath}`;
 
-                // 4. 返回专门给爬虫看的 HTML 响应
                 return new Response(
                     `<!DOCTYPE html>
-                    <html lang="zh-CN">
+                    <html>
                         <head>
                             <meta charset="utf-8">
                             <title>${item.name}</title>
                             <meta name="description" content="作者: ${item.author} | 标签: ${item.tags.join(', ')}">
-                            
                             <meta property="og:type" content="article">
                             <meta property="og:title" content="${item.name}">
                             <meta property="og:description" content="作者: ${item.author} | 标签: ${item.tags.join(', ')}">
                             <meta property="og:image" content="${absoluteImageUrl}">
                             <meta property="og:url" content="${url.href}">
-                            
                             <meta name="twitter:card" content="summary_large_image">
-                            <meta name="twitter:title" content="${item.name}">
-                            <meta name="twitter:description" content="作者: ${item.author}">
                             <meta name="twitter:image" content="${absoluteImageUrl}">
-
                             <meta http-equiv="refresh" content="0;url=${url.href}">
                         </head>
-                        <body>Redirecting to OpenST Archive...</body>
+                        <body>Redirecting...</body>
                     </html>`,
                     {
                         headers: {
                             'Content-Type': 'text/html; charset=utf-8',
-                            'Cache-Control': 'public, max-age=3600' // 给边缘节点加 1 小时缓存
+                            // 调试阶段建议把 Cache-Control 设低，确定没问题了再改回 3600
+                            'Cache-Control': 'no-cache, no-store'
                         }
                     }
                 );
             }
         } catch (e) {
-            console.error('Middleware Error:', e);
-            // 出错时不拦截，让它流转到正常的 CSR 页面
+            console.error('Middleware Injection Error:', e);
         }
     }
-
-    // 5. 非爬虫或是没匹配到 ID，返回 null 或不返回，Vercel 会继续执行正常的静态页面逻辑
     return;
 }
 
-// 匹配规则：只在根路径或 archive 路径下运行，节省边缘计算资源
 export const config = {
-    matcher: ['/', '/index.html', '/archive.html'],
+    matcher: ['/', '/index.html', '/archive', '/archive.html'],
 };
