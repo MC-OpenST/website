@@ -174,7 +174,7 @@ const AppOptions = {
                 const newUrl = `${window.location.pathname}?${item.sub_id}`;
                 window.history.pushState({ subId: item.sub_id }, '', newUrl);
                 if (item.name) {
-                    document.title = `${item.name} -${item.name} OpenST Archive`;
+                    document.title = `${item.name} - OpenST Archive`;
                     let metaDesc = document.querySelector('meta[name="description"]');
                     if (!metaDesc) {
                         metaDesc = document.createElement('meta');
