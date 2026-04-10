@@ -49,9 +49,9 @@
                   :groups="dynamicTagGroups"
                   :selected="selectedTags"
                   v-model:search="searchQuery"
-                  @reset="resetFilters">
+                  @reset="resetFilters"
                   :show-only-favs="showOnlyFavs"
-                  @update:show-only-favs="showOnlyFavs = $event"
+                  @update:show-only-favs="showOnlyFavs = $event">
         </side-bar>
 
         <main class="flex-1 p-6 pb-[20vh] overflow-y-auto bg-dark custom-scrollbar" id="main-content">
