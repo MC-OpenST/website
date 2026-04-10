@@ -177,6 +177,26 @@ const AppOptions = {
                     }
                     const summary = item.description.split('\n')[2] || item.name; // 避开标题取第一行正文
                     metaDesc.setAttribute('content', summary.replace(/[#*`>]/g, ''));
+                    const updateMeta = (property, content) => {
+                        let el = document.querySelector(`meta[property="${property}"]`);
+                        if (!el) {
+                            el = document.createElement('meta');
+                            el.setAttribute('property', property);
+                            document.head.appendChild(el);
+                        }
+                        el.setAttribute('content', content);
+                    };
+
+                    updateMeta('og:title', `${item.name} - OpenST`);
+                    updateMeta('og:image', window.location.origin + item.preview);
+                    updateMeta('og:type', 'article');
+                    let linkCanonical = document.querySelector('link[rel="canonical"]');
+                    if (!linkCanonical) {
+                        linkCanonical = document.createElement('link');
+                        linkCanonical.rel = 'canonical';
+                        document.head.appendChild(linkCanonical);
+                    }
+                    linkCanonical.href = window.location.href;
                 }
             }
         },
@@ -268,6 +288,7 @@ const AppOptions = {
         isFavorite(itemId) {
             return this.favorites.includes(itemId);
         },
+
     },
 
     async mounted() {
