@@ -35,7 +35,7 @@
           "key": "sub-(.*)"
         }
       ],
-      "destination": "/api/DymaticRender"
+      "destination": "/api/DymaticMeta"
     }
   ]
 }
