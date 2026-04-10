@@ -12,7 +12,7 @@ export const NavBar = {
                 </svg>
             </button>
             <div class="font-bold tracking-tighter text-brand text-xl">
-                MC-OPENST <span class="hidden sm:inline text-white/40 text-xs tracking-normal ml-1 font-normal uppercase">v4.0</span>
+                OpenST | 档案馆 <span class="hidden sm:inline text-white/40 text-xs tracking-normal ml-1 font-normal uppercase">v4.0</span>
             </div>
         </div>
 

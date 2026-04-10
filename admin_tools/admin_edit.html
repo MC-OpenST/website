@@ -228,7 +228,7 @@
                 if (this.editForm.preview.startsWith('data:image')) return this.editForm.preview;
                 const rawPath = decodeURIComponent(this.editForm.preview);
                 const safePath = rawPath.split('/').map(s => encodeURIComponent(s)).join('/');
-                return `https://cdn.jsdmirror.com/gh/MC-OpenST/website@main/${safePath}`;
+                return `https://cdn.jsdmirror.com/gh/OpenST-mc/website@main/${safePath}`;
             }
         },
         async mounted() {

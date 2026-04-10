@@ -6,7 +6,7 @@ const BOT_TOKEN = '';
 const CHAT_ID   = '';
 const CLIENT_ID = '';
 const CLIENT_SECRET = '';
-const GH_REPO = 'MC-OpenST/website';
+const GH_REPO = 'OpenST-mc/website';
 
 const TG_API_BASE = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
@@ -127,7 +127,7 @@ export default {
                     : `### 📚 Wiki 提交申请\n\n- **提交者**: @${user}\n- **资源包**: [Zip存档](${downloadUrl})`;
 
                 // C. 在 Submissions 仓库创建 Issue
-                const issueRes = await fetch(`https://api.github.com/repos/MC-OpenST/Submissions/issues`, {
+                const issueRes = await fetch(`https://api.github.com/repos/OpenST-mc/Submissions/issues`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `token ${token}`,

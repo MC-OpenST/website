@@ -148,7 +148,7 @@ const AppOptions = {
         getDownloadLink(item) {
             if (!item) return '';
             const path = `archive/${item.id}/${item.filename}`;
-            const raw = `https://raw.githubusercontent.com/MC-OpenST/website/main/${path}`;
+            const raw = `https://raw.githubusercontent.com/OpenST-mc/website/main/${path}`;
             const finalRaw = raw.replace('https://', 'https:/');
             return this.useProxy ? `https://cdn.linvin.net/${finalRaw}` : raw;
         },
