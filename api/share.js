@@ -1,17 +1,14 @@
 export default async function handler(req, res) {
-    // 自动兼容两种传参：?id=sub-xxx 或直接 ?sub-xxx
     const queryKeys = Object.keys(req.query);
     const subId = req.query.id || queryKeys.find(k => k.startsWith('sub-'));
 
     try {
-        // 从你的线上数据库获取实时数据
         const data = await fetch('https://openstmc.com/data/database.json')
             .then(r => r.json());
 
         const item = data.find(i => i.sub_id === subId);
 
         if (!item) {
-            // 没找到稿件时，静默跳转回主档案馆，不让用户看报错
             return res.send('<script>location.replace("https://openstmc.com/archive")</script>');
         }
 
