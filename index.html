@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-
     <title>OpenST | Portal</title>
     <meta name="title" content="OpenST | Portal">
     <meta name="description" content="OpenST ：归档、转换并在线预览 Minecraft 优秀储电作品。提供精密机器存档下载与 WebGL 投影预览。">
@@ -32,117 +31,215 @@
     <link rel="icon" type="image/png" sizes="128x128" href="images/favicon-2.png">
     <link rel="icon" type="image/png" sizes="196x196" href="images/favicon-2.png">
     <link rel="apple-touch-icon" href="images/favicon.png" sizes="any">
-    <link rel="stylesheet" href="output.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;800&display=block">
+    <link rel="stylesheet" href="https://fonts.font.im/css2?family=JetBrains+Mono:wght@400;800&display=block">
     <style>
-        :root { --brand-color: #40B5AD; }
+        @font-face {
+            font-family: 'JetBrains Mono Fallback';
+            src: local('JetBrains Mono ExtraBold'),
+            url('./fonts/JetBrainsMono-Bold.woff2') format('woff2'),
+            local('JetBrains Mono Bold'),
+            local('JetBrains Mono');
+            font-display: swap;
+        }
+        .loading-skeleton {
+            color: transparent !important;
+            background: linear-gradient(90deg, #1a1a1e 25%, #2a2a2e 50%, #1a1a1e 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 2px;
+        }
+
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        :root {
+            --rs-red: #ff4d00;
+            --st-cyan: #40B5AD;
+            --logic-bg: #0a0a0b;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden; /* 核心 */
+            position: relative;
+        }
 
         body {
-            background: #0c0c0c;
-            color: #d1d1d6;
-            font-family: -apple-system, "SF Pro Display", "PingFang SC", sans-serif;
-            -webkit-font-smoothing: antialiased;
+            background-color: var(--logic-bg);
+            color: #a1a1aa;
+            font-family: 'JetBrains Mono', monospace;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: #1f2223 #2a2a2e;
         }
 
-        /* 纯净背景 */
-        .soft-bg {
-            position: absolute; inset: 0;
-            background: radial-gradient(circle at center, #151515 0%, #0c0c0c 100%);
-            z-index: 0;
+        /* 逻辑阵列背景 */
+        .logic-grid {
+            position: fixed; inset: 0;
+            background-image:
+                    radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0);
+            background-size: 32px 32px;
+            z-index: -1;
         }
 
-        /* 卡片设计：极致干净，取消所有自动生成的干扰字体 */
-        .portal-card {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.6s cubic-bezier(0.15, 0.8, 0.2, 1);
+        /* 模拟红石线 */
+        .rs-wire {
+            position: absolute;
+            background: linear-gradient(90deg, transparent, var(--rs-red), transparent);
+            height: 1px;
+            width: 100%;
+            opacity: 0.3;
+            filter: blur(1px);
+        }
+
+        /* 硬核切角卡片 */
+        .tech-panel {
+            background: rgba(20, 20, 22, 0.8);
+            border-left: 4px solid #2a2a2e;
+            transition: all 0.4s cubic-bezier(0.2, 1, 0.3, 1);
             position: relative;
-            overflow: hidden;
+        }
+        .tech-panel:hover {
+            border-left-color: var(--st-cyan);
+            background: rgba(30, 30, 35, 1);
+            transform: translateX(8px);
+        }
+        .tech-panel::after {
+            content: 'READY';
+            position: absolute; top: 10px; right: 20px;
+            font-size: 8px; color: #333; letter-spacing: 2px;
         }
 
-        /* 鼠标悬停效果：仅光影变化，无文字干扰 */
-        .portal-card:hover {
-            background: rgba(255, 255, 255, 0.04);
-            transform: translateY(-4px);
+        /* 信号呼吸灯 */
+        .signal {
+            width: 8px; height: 2px;
+            background: var(--rs-red);
+            box-shadow: 0 0 10px var(--rs-red);
+            animation: blink 0.1s infinite alternate;
         }
+        @keyframes blink { to { opacity: 0.3; } }
 
-        /* 特殊处理：档案馆悬停时边框亮起品牌色 */
-        .archive-hover:hover { border-color: rgba(64, 181, 173, 0.4); }
-        /* Wiki 悬停时边框亮起蓝色 */
-        .wiki-hover:hover { border-color: rgba(59, 130, 246, 0.4); }
-        /* 投影版本转换：悬停亮起极光紫 */
-        .converter-hover:hover { border-color: rgba(159, 122, 234, 0.4); }
-        /* 投影预览：悬停亮起科技黄 */
-        .preview-hover:hover { border-color: rgba(245, 158, 11, 0.4); }
-
-        .breath-light {
-            width: 4px; height: 4px;
-            background: var(--brand-color);
-            border-radius: 50%;
-            box-shadow: 0 0 8px var(--brand-color);
-            opacity: 0.4;
+        .glitch-text:hover {
+            text-shadow: 2px 0 var(--rs-red), -2px 0 var(--st-cyan);
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-8 relative">
-<div class="soft-bg"></div>
+<body class="min-h-screen p-4 md:p-12"> <div class="logic-grid"></div>
 
-<script>
-    if (window.location.search.length > 1) {
-        window.location.href = 'archive.html' + window.location.search;
-    }
-</script>
+<div class="rs-wire top-[10%] md:top-[15%]"></div>
+<div class="rs-wire top-[90%] md:top-[85%] opacity-10"></div>
 
-<div class="relative z-10 w-full max-w-5xl">
-    <header class="mb-24 flex items-center gap-6">
-        <h1 class="text-3xl font-bold tracking-tight text-[#f5f5f7]">OpenST</h1>
-        <div class="h-px flex-1 bg-white/5"></div>
-        <div id="credits-trigger" class="flex items-center gap-2 text-[10px] text-gray-600 tracking-widest uppercase">
-            <div class="breath-light"></div>
-            System Active
+<div class="max-w-6xl mx-auto relative">
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-16 md:mb-32 border-b border-white/5 pb-8 gap-6">
+        <div class="space-y-2">
+            <div class="flex items-center gap-3">
+                <div class="signal"></div>
+                <h1 class="text-3xl md:text-4xl font-black tracking-tighter text-white glitch-text cursor-default loading-skeleton">OPEN<span class="text-[#40B5AD] loading-skeleton">ST</span></h1>
+            </div>
+            <p class="text-[9px] md:text-[10px] text-gray-600 uppercase tracking-[0.2em] md:tracking-[0.4em] loading-skeleton">Protocol Version 4.5 // Sub-System Active</p>
+        </div>
+
+        <div id="credits-trigger" class="group cursor-pointer text-right hidden sm:block"> <div class="text-[10px] text-gray-700 group-hover:text-cyan-500 transition-colors tracking-widest loading-skeleton">ACCESS_KEY: CREDITS</div>
+            <div class="flex gap-1 mt-1 justify-end">
+                <div class="w-4 h-1 bg-white/5 group-hover:bg-cyan-500/50"></div>
+                <div class="w-8 h-1 bg-white/5 group-hover:bg-cyan-500"></div>
+            </div>
         </div>
     </header>
 
-    <nav class="grid grid-cols-1 md:grid-cols-2 gap-10">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-12">
 
-        <a href="https://wiki.openstmc.com" target="_blank" class="portal-card wiki-hover group rounded-[2.5rem] p-12">
-            <h2 class="text-2xl font-semibold mb-4 text-[#e5e5e7]">Wiki</h2>
-            <p class="text-gray-500 text-sm leading-relaxed mb-10 max-w-xs">这是wiki</p>
-            <div class="text-blue-400/60 text-xs font-medium group-hover:text-blue-400 transition-colors tracking-wide">
-                READ DOCUMENTATION ↗
+        <div class="lg:col-span-7 space-y-10 md:space-y-12">
+            <div class="space-y-4 md:space-y-6">
+                <h2 class="text-4xl md:text-6xl font-black text-white leading-none loading-skeleton uppercase">THE<br>ARCHIVE</h2>
+                <p class="text-gray-500 border-l-2 border-red-600 pl-4 md:pl-6 max-w-md italic loading-skeleton text-sm md:text-base uppercase">
+                    "开源，社区，MC。"
+                </p>
             </div>
-        </a>
 
-        <a href="archive.html" target="_blank" class="portal-card archive-hover group rounded-[2.5rem] p-12">
-            <h2 class="text-2xl font-semibold mb-4 text-[#e5e5e7]">档案馆</h2>
-            <p class="text-gray-500 text-sm leading-relaxed mb-10 max-w-xs">归档了大量优秀的作品，欢迎游览</p>
-            <div class="text-[#40B5AD] opacity-60 group-hover:opacity-100 transition-opacity text-xs font-medium tracking-wide">
-                EXPLORE REPOSITORY ↗
+            <a href="archive.html" class="block group relative">
+                <div class="absolute -inset-1 bg-gradient-to-r from-red-600 to-cyan-600 opacity-20 group-hover:opacity-40 blur transition duration-500"></div>
+                <div class="relative tech-panel p-8 md:p-12 overflow-hidden bg-black h-64 md:h-80 flex flex-col justify-between">
+                    <div class="z-10">
+                        <span class="text-[9px] md:text-[10px] text-red-500 font-bold tracking-[0.5em] loading-skeleton uppercase">PRIMARY_ENTRY</span>
+                        <h3 class="text-2xl md:text-3xl font-black text-white mt-2 md:mt-4 loading-skeleton uppercase">进入档案馆</h3>
+                    </div>
+                    <div class="z-10 flex items-center gap-4 text-[10px] md:text-xs tracking-widest text-gray-500 group-hover:text-white transition-colors loading-skeleton">
+                        <span class="truncate uppercase">Initializing_Session</span>
+                        <div class="h-px flex-1 bg-white/10 hidden sm:block"></div>
+                        <span class="shrink-0 uppercase uppercase">0x801_Deployed</span>
+                    </div>
+                    <div class="absolute right-0 bottom-0 text-white/[0.02] font-black text-7xl md:text-9xl -mb-6 -mr-6 md:-mb-10 md:-mr-10 select-none loading-skeleton uppercase">DATA</div>
+                </div>
+            </a>
+        </div>
+
+        <div class="lg:col-span-5 flex flex-col gap-4 md:gap-6">
+            <div class="text-[9px] md:text-[10px] font-bold text-gray-800 tracking-[0.3em] mb-2 loading-skeleton uppercase">// Auxiliary_Modules</div>
+
+            <a href="https://wiki.openstmc.com" target="_blank" class="tech-panel p-6 md:p-8 group">
+                <div class="flex justify-between items-start">
+                    <h4 class="text-base md:text-lg font-bold text-white group-hover:text-[#40B5AD] transition-colors loading-skeleton uppercase">Wiki</h4>
+                    <span class="text-gray-800 font-mono text-[10px] md:text-xs loading-skeleton uppercase">01</span>
+                </div>
+                <p class="text-[11px] md:text-xs text-gray-600 mt-4 leading-relaxed loading-skeleton uppercase">
+                    学习储电知识，社区驱动的大型 Wiki
+                </p>
+            </a>
+
+            <a href="Extra-Function/litematic-converter/index.html" target="_blank" class="tech-panel p-6 md:p-8 group border-l-purple-900/50 hover:border-l-purple-500">
+                <div class="flex justify-between items-start">
+                    <h4 class="text-base md:text-lg font-bold text-white group-hover:text-purple-400 transition-colors loading-skeleton uppercase">版本转换 (CONV)</h4>
+                    <span class="text-gray-800 font-mono text-[10px] md:text-xs loading-skeleton uppercase">02</span>
+                </div>
+                <p class="text-[11px] md:text-xs text-gray-600 mt-4 leading-relaxed loading-skeleton uppercase">
+                    跨版本投影转换，支持 MC 1.12 到最新版本
+                </p>
+            </a>
+
+            <a href="Extra-Function/litematic-preview/index.html" target="_blank" class="tech-panel p-6 md:p-8 group border-l-orange-900/50 hover:border-l-orange-500">
+                <div class="flex justify-between items-start">
+                    <h4 class="text-base md:text-lg font-bold text-white group-hover:text-orange-400 transition-colors loading-skeleton uppercase">结构预览 (WebGL)</h4>
+                    <span class="text-gray-800 font-mono text-[10px] md:text-xs loading-skeleton uppercase">03</span>
+                </div>
+                <p class="text-[11px] md:text-xs text-gray-600 mt-4 leading-relaxed loading-skeleton uppercase">
+                    3D 预览投影，无需打开游戏即可查看机器细节
+                </p>
+            </a>
+
+            <div class="p-4 md:p-6 border border-white/5 rounded-sm space-y-4">
+                <div class="flex justify-between text-[7px] md:text-[8px] tracking-tighter">
+                    <span class="text-gray-700 loading-skeleton uppercase">Buffer_Load</span>
+                    <span class="text-red-500 loading-skeleton uppercase">Optimal</span>
+                </div>
+                <div class="flex gap-1">
+                    <div class="h-1 flex-1 bg-red-500/50"></div>
+                    <div class="h-1 flex-1 bg-red-500/30"></div>
+                    <div class="h-1 flex-1 bg-white/5"></div>
+                    <div class="h-1 flex-1 bg-white/5"></div>
+                </div>
             </div>
-        </a>
+        </div>
+    </div>
 
-        <a href="Extra-Function/litematic-converter/index.html" target="_blank" class="portal-card converter-hover group rounded-[2.5rem] p-12">
-            <h2 class="text-2xl font-semibold mb-4 text-[#e5e5e7]">投影版本转换</h2>
-            <p class="text-gray-500 text-sm leading-relaxed mb-10 max-w-xs">转换投影版本！</p>
-            <div class="text-[#9F7AEA] opacity-60 group-hover:opacity-100 transition-opacity text-xs font-medium tracking-wide">
-                CONVERTER NOW ↗
-            </div>
-        </a>
-
-        <a href="Extra-Function/litematic-preview/index.html" target="_blank" class="portal-card preview-hover group rounded-[2.5rem] p-12">
-            <h2 class="text-2xl font-semibold mb-4 text-[#e5e5e7]">投影预览</h2>
-            <p class="text-gray-500 text-sm leading-relaxed mb-10 max-w-xs">网页webGL投影预览</p>
-            <div class="text-[#F59E0B] opacity-60 group-hover:opacity-100 transition-opacity text-xs font-medium tracking-wide">
-                EXPLORE LITEMATIC ↗
-            </div>
-        </a>
-
-    </nav>
-
-    <footer class="mt-24 text-[9px] text-gray-800 tracking-[0.4em] uppercase text-center font-medium">
-        <a href="https://github.com/OpenST-mc"> <span>© 2026 OpenST-mc · Open Storage Tech</span></a>
+    <footer class="mt-24 md:mt-32 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8 md:gap-6">
+        <div class="text-[9px] text-gray-700 tracking-[0.2em] md:tracking-[0.5em] uppercase loading-skeleton uppercase">
+            © 2026 OpenST-mc // Technical Storage Protocol
+        </div>
+        <div class="flex gap-8">
+            <a href="https://github.com/OpenST-mc" class="text-[9px] text-gray-500 hover:text-white transition-colors tracking-widest loading-skeleton uppercase uppercase">Github_Repo</a>
+            <a href="https://status.openst.qzz.io" class="text-[9px] text-gray-500 hover:text-white transition-colors tracking-widest loading-skeleton uppercase uppercase">ST_Network</a>
+        </div>
     </footer>
 </div>
-
 <script>
     (function() {
         let clickCount = 0;
@@ -206,6 +303,31 @@
                 }
             });
         }
+    })();
+</script>
+<script>
+    (function() {
+        const unlockSystem = () => {
+            const skeletons = document.querySelectorAll('.loading-skeleton');
+            skeletons.forEach(el => el.classList.remove('loading-skeleton'));
+            document.body.classList.add('ready');
+            console.log("%c字体加载成功", "color: #40B5AD; font-weight: bold;");
+        };
+        if ('fonts' in document) {
+            document.fonts.ready.then(() => {
+                // 微调延迟，确保渲染平滑
+                setTimeout(unlockSystem, 100);
+            });
+        } else {
+            window.onload = unlockSystem;
+        }
+        setTimeout(() => {
+            const skeletons = document.querySelectorAll('.loading-skeleton');
+            if (skeletons.length > 0 && skeletons[0].classList.contains('loading-skeleton')) {
+                console.warn("SYSTEM: FONT_LOAD_TIMEOUT, FORCING_DISPLAY");
+                unlockSystem();
+            }
+        }, 2500);
     })();
 </script>
 <script>
