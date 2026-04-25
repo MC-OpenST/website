@@ -14,7 +14,7 @@ export default defineConfig({
     cors: true
   },
   build: {
-    base: '/',
+    base: './',
     outDir: 'dist',
     rollupOptions: {
       input: {
