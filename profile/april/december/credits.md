@@ -6,8 +6,7 @@
 none（其实就是什么都不想说） --- Trice450  
 ## 管理
 - Linvin-1233  
-- Trice450  
-- linchien26
+- Trice450
 
 ## 档案馆审核员（Directory Auditor） 
 - Linvin-1233
@@ -40,5 +39,6 @@ none（其实就是什么都不想说） --- Trice450
 - Breeze 
 - BFladderbean  
 - 4rcadia  
+- linchien26
 
 **OpenST**  Built with passion. Powered by Open Source.
