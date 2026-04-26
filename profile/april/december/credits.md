@@ -14,6 +14,7 @@ none（其实就是什么都不想说） --- Trice450
 - woodengrass
 - Gufen-hnust  
 - yymhyymh
+- XiyiyeJay30
 
 ## 网站维护（Website Maintainer）
 - Linvin-1233
