@@ -1,2 +1,3 @@
-import { SpeedInsights } from "@vercel/speed-insights/next"
-SpeedInsights();
+import { injectSpeedInsights } from '@vercel/speed-insights';
+
+injectSpeedInsights();
