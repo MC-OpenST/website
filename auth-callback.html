@@ -1,4 +1,13 @@
 <!-- auth-callback.html-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Callback</title>
+    <script src="/scripts/insights.js" type="module"></script>
+</head>
+<body>
 <script>
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
@@ -21,3 +30,5 @@
             });
     }
 </script>
+</body>
+</html>
