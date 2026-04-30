@@ -1,3 +1,3 @@
-import { injectSpeedInsights } from '@vercel/speed-insights';
+import { SpeedInsights } from "@vercel/speed-insights/vue"
 
-injectSpeedInsights();
+SpeedInsights();
