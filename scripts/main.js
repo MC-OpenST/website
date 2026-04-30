@@ -92,7 +92,8 @@ const AppOptions = {
     },
     watch: {
         selectedTags: { deep: true, handler() { this.currentPage = 1; } },
-        searchQuery() { this.currentPage = 1; }
+        searchQuery() { this.currentPage = 1; },
+        showOnlyFavs() { this.currentPage = 1; }
     },
     methods: {
         // URL 参数定位逻辑 (?sub-xxx)
