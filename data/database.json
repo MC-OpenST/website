@@ -66,6 +66,19 @@
         "sub_id": "sub-1774646113585"
     },
     {
+        "id": "8bit 二进制安全编码器",
+        "name": "[1.16+] 8bit 二进制安全编码器",
+        "author": "30",
+        "tags": [
+            "二进制",
+            "1.16+"
+        ],
+        "description": "### 🚀 机器概览\n- **核心功能**:  \n将物品/盒子转成8位的二进制码\n- **适用版本**: Java 1.16+\n- **投影创建者**：Xiyeye_Jay30\n- **投影创建时间**：2024-09-19\n\n### 📖 使用说明\n1. 在非原版特性端使用时，请先测试机器能否正常工作后再进行实装\n2. 编码器可自由缩短/加长。请为此注意每一片的充能\n\n> 提示：本机器拥有安全性保护",
+        "preview": "archive/8bit 二进制安全编码器/preview.webp",
+        "filename": "2x Encoded Hall Wiring--By.30 (1).litematic",
+        "sub_id": "sub-1777730636323"
+    },
+    {
         "id": "8gt盒子取样器 8gt_keygen",
         "name": "【1.16+】8gt 盒子取样器",
         "author": "Unknown",
@@ -184,6 +197,21 @@
         "preview": "archive/对称计数堆分打包/preview.webp",
         "filename": "ideal堆分打包（mini折半）.litematic",
         "sub_id": "sub-1772667193043"
+    },
+    {
+        "id": "小型远程大宗",
+        "name": "[1.16+] 小型远程大宗",
+        "author": "LU",
+        "tags": [
+            "1.16+",
+            "二进制",
+            "远程大宗",
+            "编码大宗"
+        ],
+        "description": "### 🚀 机器概览\n- **核心功能**: 将大宗盒子送入远程相应码的单片内储存，减少了客户端渲染卡顿\n- **投影创建者**：lucas_aaa123\n- **创建时间**：2025-09-08\n- **适用版本**: Java 1.16+\n\n### 📖 使用说明\n1. 此大宗为单线程，需搭配线程优先级+编码器使用\n2. 无法自由扩片，相同的码需挨在一起才能扩片\n\n> 提示：单片可横向堆叠",
+        "preview": "archive/小型远程大宗/preview.webp",
+        "filename": "Lu mini bulk.litematic",
+        "sub_id": "sub-1777730271855"
     },
     {
         "id": "无实体输入 V3",
