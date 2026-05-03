@@ -19,7 +19,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: 'index.html',
-        upload: 'upload/upload.html',
+        upload: 'upload/index.html',
         archive: 'archive.html'
       }
     }

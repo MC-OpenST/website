@@ -16,6 +16,23 @@ function getExpandedTags(config, val) {
     return [val];
 }
 
+function findContextParent(config, tagName, activeVals) {
+    if (!config || Array.isArray(config)) return null;
+
+    // 优先寻找用户同时选中的那个父分类
+    for (const subCat of Object.keys(config)) {
+        if (Array.isArray(config[subCat]) && config[subCat].includes(tagName)) {
+            // 如果用户选中的列表中包含这个父分类名，直接锁定
+            if (activeVals.includes(subCat)) return subCat;
+        }
+    }
+
+    // 如果没有同时选中，则按原样寻找第一个匹配项
+    return Object.keys(config).find(subCat =>
+        Array.isArray(config[subCat]) && config[subCat].includes(tagName)
+    );
+}
+
 // 核心过滤函数
 export function getFilteredList(data, search, selected, normalizeFn) {
     if (!data) return [];
@@ -46,8 +63,23 @@ export function getFilteredList(data, search, selected, normalizeFn) {
             const config = TAG_CONFIG[cat];
 
             return valList.every(val => {
+                const itemTags = item.tags || [];
+                // 判断是否是子标签冲突区（例如：二进制）
+                const subCat = findContextParent(config, val, valList);
+
+                if (config[val] && !Array.isArray(config)) {
+                    return itemTags.includes(val);
+                }
+
+                // 2. 如果 val 是子类（如“二进制”）
+                if (subCat && subCat !== val) {
+                    // 强制父子双重判定
+                    return itemTags.includes(val) && itemTags.includes(subCat);
+                }
+
+                // 3. 兜底逻辑（针对没有层级的简单标签）
                 const allowedTags = getExpandedTags(config, val);
-                return item.tags && item.tags.some(t => allowedTags.includes(t));
+                return itemTags.some(t => allowedTags.includes(t));
             });
         });
 
