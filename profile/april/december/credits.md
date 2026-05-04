@@ -35,6 +35,9 @@ none（其实就是什么都不想说） --- Trice450
 - JRubikMC  
 - Obi
 - anchun
+- 30
+- LU
+- 漾绅
 
 ## 特别感谢（Special Credits）
 - Breeze 
