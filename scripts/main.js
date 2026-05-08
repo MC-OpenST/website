@@ -151,7 +151,7 @@ const AppOptions = {
             const path = `archive/${item.id}/${item.filename}`;
             const raw = `https://raw.githubusercontent.com/OpenST-mc/website/main/${path}`;
             const finalRaw = raw.replace('https://', 'https:/');
-            return this.useProxy ? `https://cdn.linvin.net/${finalRaw}` : raw;
+            return this.useProxy ? `https://cdn.openstmc.com/${finalRaw}` : raw;
         },
 
         // 编辑跳转逻辑
