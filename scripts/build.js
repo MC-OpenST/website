@@ -11,7 +11,7 @@ const ARCHIVE_DIR = path.join(root, 'archive');
 const OUTPUT_FILE = path.join(root, 'data/database.json');
 
 // 支持的原始图片格式优先顺序
-const SUPPORTED_IMG_EXTS = ['.png', '.jpg', '.jpeg'];
+const SUPPORTED_IMG_EXTS = ['.png', '.jpg', '.jpeg','.webp',];
 
 async function processFolder(folder) {
     if (folder.startsWith('.')) return null;
@@ -54,7 +54,7 @@ async function processFolder(folder) {
                         .toFile(webpPath);
                     console.log(`优化图片: ${folder}/${sourceImg} -> WebP`);
                 }
-                finalPreview = `archive/${folder}/preview.webp`;
+                finalPreview = `/archive/${folder}/preview.webp`;
             } catch (err) {
                 console.warn(` 图片转换失败 ${folder}: ${err.message}`);
             }
