@@ -611,32 +611,6 @@
         "sub_id": "sub-1778344851029-716"
     },
     {
-        "id": "全锁无实体输入 1.17＋",
-        "name": "全锁无实体输入 1.17＋",
-        "author": "Unknown",
-        "tags": [
-            "无实体输入",
-            "1.17+"
-        ],
-        "description": "### 🚀 机器概览\n- **核心功能**: 未知\n- **适用版本**: Java 1.17+\n- **投影创建者名称**: Unknown\n- **投影创建时间**: 2026-05-09\n\n### 📖 使用说明\n1. 在非原版特性端使用时，请先测试机器能否正常工作后再进行实装。\n2. 机器介绍：未知",
-        "preview": "/archive/全锁无实体输入 1.17＋/preview.webp",
-        "filename": "Fully_Locked_Storage_Input_System_1.17[SIS无实体输入].litematic",
-        "sub_id": "sub-1778344851031-625"
-    },
-    {
-        "id": "全锁无实体输入 1.18",
-        "name": "全锁无实体输入 1.18",
-        "author": "Unknown",
-        "tags": [
-            "无实体输入",
-            "1.16+"
-        ],
-        "description": "### 🚀 机器概览\n- **核心功能**: 未知\n- **适用版本**: Java 1.16+\n- **投影创建者名称**: Unknown\n- **投影创建时间**: 2026-05-09\n\n### 📖 使用说明\n1. 在非原版特性端使用时，请先测试机器能否正常工作后再进行实装。\n2. 机器介绍：未知",
-        "preview": "/archive/全锁无实体输入 1.18/preview.webp",
-        "filename": "Fully_Locked_Storage_Input_System_1.18[SIS无实体输入].litematic",
-        "sub_id": "sub-1778344851034-913"
-    },
-    {
         "id": "全锁预分类整流器",
         "name": "全锁预分类整流器",
         "author": "Unknown",
