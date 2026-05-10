@@ -430,13 +430,13 @@
     },
     {
         "id": "Variable Filter V2.1b-r4",
-        "name": "Variable Filter V2.1b-r4",
-        "author": "Unknown",
+        "name": "自适应打包机 V2.1b-r4",
+        "author": "Andrews54757",
         "tags": [
             "潜影盒打包机",
             "1.16+"
         ],
-        "description": "### 🚀 机器概览\n- **核心功能**: 未知\n- **适用版本**: Java 1.16+\n- **投影创建者名称**: Unknown\n- **投影创建时间**: 2026-05-09\n\n### 📖 使用说明\n1. 在非原版特性端使用时，请先测试机器能否正常工作后再进行实装。\n2. 机器介绍：未知",
+        "description": "### 🚀 机器概览\n- **核心功能**: 自适应分类打包，一段时间内无任何输入将自动下漏分类物，后打盒\n- **适用版本**: Java 1.16+\n- **投影创建者名称**: Andrews54757\n- **投影创建时间**: 2026-05-09\n\n### 📖 使用说明\n1. 在非原版特性端使用时，请先测试机器能否正常工作后再进行实装。",
         "preview": "/archive/Variable Filter V2.1b-r4/preview.webp",
         "filename": "Variable Filter V2.1b-r4[打包机][自适应打包机].zip",
         "sub_id": "sub-1778344851090-192"
